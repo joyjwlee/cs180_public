@@ -76,7 +76,7 @@
 										I initially tried to find the most optimal <code>(dx, dy)</code> displacement by finding the minimum Euclidean distance between the two channels that are being compared.
 										The Euclidean distance, aka the L2 norm, has the following form: <pre><code>L2(image1, image2) = sqrt(sum(sum((image1-image2).^2)))</code></pre>
 										This, however, kept on giving me artifacts in the output images, so I decided to use the max normalized cross-correlation instead.
-										The max normalized cross-correlation, aka the NCC, has the following form: <pre><code>NCC(image1, image2) = (image1./||image1|| and image2./||image2||)</code></pre>
+										The max normalized cross-correlation, aka the NCC, has the following form (the dot product of the normalized vector representation of the images): <pre><code>NCC(image1, image2) = (image1/||image1||) · (image2/||image2||)</code></pre>
 										In summary, I found the most optimal <code>(dx, dy)</code> displacement by finding the maximum value of the NCC between the two channels that are being compared, after realizing that finding the minimum L2 distance was not as effective (for some reason).
 									</p>
 
@@ -319,7 +319,12 @@ Time taken: 12.4353 seconds.</code></pre>
 									</ul>
 									<p>Finally, for my bells & whistles, I implemented a single-scale algorithm that utilizes Fourier transforms and phase correlation to align the green (G) and red (R) channels to the blue (B) channel for all images.
 										To do this, I first converted the images to the frequency domain using the Fourier transform, and then computed the cross-power spectrum to find the phase correlation.
-										This method ended up being the most effective, as it was able to align all of the images without any artifacts and ran much faster than the other two methods, as evidenced by the average times for both the jpg and the tif files.
+										In pseudocode, the Fourier single-scale algorithm has the following form:
+										<pre><code>template_fft, image_fft := the Fourier transforms of the template and image
+cross_power_spectrum := template_fft * conj(image_fft)
+normalized_cps := the normalized cross-power spectrum
+dx, dy := the offset that maximizes the normalized_cps</code></pre>
+										This method ended up being the most effective, as it was able to align all of the images without any artifacts and ran much faster than the other two methods as evidenced by the average times for both the jpg and the tif files.
 									</p>
 
 									<div class="features">
