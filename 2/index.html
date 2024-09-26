@@ -1,0 +1,777 @@
+<!DOCTYPE HTML>
+<!--
+	Photon by HTML5 UP
+	html5up.net | @ajlkn
+	Free for personal and commercial use under the CCA 3.0 license (html5up.net/license)
+-->
+<html>
+	<head>
+		<title>Photon by HTML5 UP</title>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+		<link rel="stylesheet" href="assets/css/main.css" />
+		<noscript><link rel="stylesheet" href="assets/css/noscript.css" /></noscript>
+	</head>
+	<body class="is-preload">
+
+		<!-- Header -->
+			<section id="header">
+				<div class="inner">
+					<span class="icon solid major fa-cloud"></span>
+					<h1><strong></strong>Project 2: Fun with Filters and Frequencies</strong></h1>
+					<h2>Jaewon Lee (SID: 3036696329)</h2>
+					<ul class="actions special">
+						<li><a href="#one" class="button scrolly">Let's go!</a></li>
+					</ul>
+				</div>
+			</section>
+
+		<!-- One -->
+			<section id="one" class="main style1">
+				<div class="container">
+					<div class="row gtr-150">
+						<div class="col-6 col-12-medium">
+							<header class="major">
+								<h2>Overview</h2>
+							</header>
+							<p>In this project, I implemented the following:</p>
+							<ol>
+								<li>Run edge detection for images using the finite difference operator and the derivative of gaussian (DoG) filter</li>
+								<li>Sharpen images (and blur then re-sharpen images)</li>
+								<li>Create hybrid images in the SIGGRAPH 2006 paper by Oliva, Torralba, and Schyns</li>
+								<li>Embark on the oraple journey for multi-resolution blending</li>
+							</ol>
+						</div>
+						<div class="col-6 col-12-medium imp-medium">
+							<span class="image fit"><img src="images/oraple.jpg" alt="" /></span>
+							<p>the (in)famous oraple</p>
+						</div>
+					</div>
+				</div>
+			</section>
+
+		<!-- Two -->
+		<hr/>
+			<section id="Two" class="main style1 special">
+				<div class="container">
+					<header class="major">
+						<h2>Part 1: Fun with Filters</h2>
+					</header>
+					<p>2D convolutions and filtering</p>
+					<header class="major">
+						<h3>Part 1.1: Finite Difference Operator</h3>
+					</header>
+					<p>In this part, we use the finite difference operator to do edge detection of our cameraman image. We convolve the Dx and Dy arrays with our cameraman image to compute the "partial derivatives" of our image in the X and Y directions. Then, we take the square root of the sum of the squares of the partials to achieve the gradient of the image.</p>
+					<div class="row gtr-150">
+						<div class="col-4 col-12-medium">
+							<span class="image"><img src="images/dxdy.svg" alt="" /></span>
+							<h3>D_x and D_y</h3>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image"><img src="images/partial_deriv.svg" alt="" /></span>
+							<h3>Partial Derivative</h3>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image"><img src="images/gradient_eqn.svg" alt="" /></span>
+							<h3>The gradient image</h3>
+						</div>
+						<p>Down below, we display the partial derivatives, the gradient, and binarized gradient after it's been thresholded. I chose the threshold to be 50 (out of 255) by inspection and by viewing the distribution of the gradient magnitudes via a histogram.</p>
+						<div class="col-3 col-12-medium">
+							<span class="image fit"><img src="images/cameraman_x.jpg" alt="" /></span>
+							<h3>Cameraman dX</h3>
+						</div>
+						<div class="col-3 col-12-medium">
+							<span class="image fit"><img src="images/cameraman_y.jpg" alt="" /></span>
+							<h3>Cameraman dY</h3>
+						</div>
+						<div class="col-3 col-12-medium">
+							<span class="image fit"><img src="images/cameraman_grad.jpg" alt="" /></span>
+							<h3>Cameraman gradient magnitude</h3>
+						</div>
+						<div class="col-3 col-12-medium">
+							<span class="image fit"><img src="images/cameraman_grad_binarized.jpg" alt="" /></span>
+							<h3>Cameraman gradient binarized</h3>
+						</div>
+						<div class="col-6 col-12-medium imp-medium">
+							<span class="image fit"><img src="images/cameraman_grad_histogram.jpg" alt="" /></span>
+							<h3>left: full histogram of the cameraman gradient <br/>right: same histogram as the left but only keeping values between 10 and 250 for better viewing.</h3>
+						</div>
+						<div class="col-6 col-12-medium imp-medium">
+							<span class="image fit"><img src="images/cameraman_grad_thresholds.jpg" alt="" /></span>
+							<h3>The cameraman gradient image at different thresholds (5-245 in increments of 5)</h3>
+						</div>
+					</div>
+					
+					<hr/>
+					<header class="major">
+						<h3>Part 1.2: Derivative of Gaussian (DoG) Filter</h3>
+					</header>
+					<p>As we can see from the binarized image, simply using the difference operator yields noisy results. Thus, we need to use Gaussian filtering as a smoothing operator to reduce the noise. We accomplish this by taking 2 approaches that ultimately yield the same result: <br/> (1) Convolve the cameraman image with a Gaussian filter and then apply the difference operator <br/> (2) Convolve the cameraman image with two derivative of Gaussian filters (one for each of X and Y)</p>
+					<div class="row gtr-150">
+						<div class="col-4 col-12-medium">
+							<span class="image"><img src="images/gaussian_filter.jpg" alt="" /></span>
+							<h3>Gaussian Filter</h3>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image"><img src="images/gaussian_filter_x.jpg" alt="" /></span>
+							<h3>DoG, dX</h3>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image"><img src="images/gaussian_filter_y.jpg" alt="" /></span>
+							<h3>DoG, dY</h3>
+						</div>
+						<p>We use the Gaussian filters above to convolve and create our images. The first approach convolves the image with our Gaussian filter and then convolves the blurred image with the Dx and Dy difference operators to compute the gradient. The second approach has fewer operations in the sense that the image convolves directly with the difference of Gaussian filters to compute the gradient. By visual inspection, we can see that the resultant gradients from both approaches are the same.</p>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/cameraman_blurred.jpg" alt="" /></span>
+							<h3>Cameraman blurred</h3>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/cameraman_blurred_x.jpg" alt="" /></span>
+							<h3>Cameraman blurred dX</h3>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/cameraman_blurred_y.jpg" alt="" /></span>
+							<h3>Cameraman blurred dY</h3>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/cameraman_blurred_grad.jpg" alt="" /></span>
+							<h3>Cameraman blurred gradient (approach 1)</h3>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/cameraman_blurred_grad_2.jpg" alt="" /></span>
+							<h3>Cameraman blurred gradient (approach 2)</h3>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/cameraman_blurred_grad_binarized.jpg" alt="" /></span>
+							<h3>Cameraman blurred gradient binarized (using approach 1's image)</h3>
+						</div>
+						<p>Some differences we can see is that the the resulting images using the Gaussian filter are smoother and less noisy as opposed to the images generated by using the finite difference operator. We can also see that the pixel values/intensities are lower in the blurred gradient as compared to the gradient from the difference operator. This is because the Gaussian filter is a low-pass filter that reduces the high frequency noise in the image. Another thing we can observe is that the edges are thicker than before, which makes sense given that we have blurred and therefore have "spread out" the effects of the edge. Otherwise, the threshold for creating the binarized image was done via inspection once again, set to 32 (out of 255) this time.</p>
+						<div class="col-6 col-12-medium imp-medium">
+							<span class="image fit"><img src="images/cameraman_blurred_grad_histogram.jpg" alt="" /></span>
+							<h3>left: full histogram of the blurred cameraman gradient <br/>right: same histogram as the left but only keeping values between 10 and 250 for better viewing.</h3>
+						</div>
+						<div class="col-6 col-12-medium imp-medium">
+							<span class="image fit"><img src="images/cameraman_blurred_grad_thresholds.jpg" alt="" /></span>
+							<h3>The cameraman gradient image at different thresholds.</h3>
+						</div>
+					</div>
+				</div>
+			</section>
+
+		<!-- Three -->
+		<hr/>
+			<section id="Three" class="main style1 special">
+				<div class="container">
+					<header class="major">
+						<h2>Part 2: Fun with Frequencies</h2>
+					</header>
+					<p>image "sharpening" and hybrid images</p>
+					<header class="major">
+						<h3>Part 2.1: Image "Sharpening"</h3>
+					</header>
+					<p>In this part, we use the unsharp masking technique to sharpen an image. We accomplish this by taking getting the high frequences of the image (by subtracting the blurred image from the original), scaling it up by some alpha, and adding it back to our original image. Here is what the equation looks like (g is the Gaussian filter):</p>
+					<div class="row gtr-150">
+						<div class="col-12">
+							<span class="image"><img src="images/unsharp.svg" alt="" /></span>
+						</div>
+						<p>First up, we have the original Taj Mahal image, the sharpened Taj Mahal image (alpha=2), and a grid that shows the sharpened images of the Taj Mahal at various values of alpha.</p>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/taj.jpg" alt="" /></span>
+							<h3>Original Taj Mahal</h3>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/taj_sharpened.jpg" alt="" /></span>
+							<h3>Sharpened Taj Mahal</h3>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/sharpened_grid_taj.jpg" alt="" /></span>
+							<h3>Grid of sharpened Taj Mahals</h3>
+						</div>
+						<p>This second set of images with IU is more or less the same as above, but with the blurred version of the original image that we then use to re-sharpen (alpha=2). To see the effects of blurring and sharpening for the IU image, we can focus on her eyes and see the difference in sharpness (and can zoom in to observe affects better as well). Although the sharpened image of the blurred image isn't as sharp as the original, we can clearly see differences in sharpness between the blurred and the sharpened images.</p>
+						<div class="col-3 col-12-medium">
+							<span class="image fit"><img src="images/iu.jpg" alt="" /></span>
+							<h3>Original IU</h3>
+						</div>
+						<div class="col-3 col-12-medium imp-medium">
+							<span class="image fit"><img src="images/iu_blurred.jpg" alt="" /></span>
+							<h3>Blurred IU</h3>
+						</div>
+						<div class="col-3 col-12-medium imp-medium">
+							<span class="image fit"><img src="images/iu_sharpened.jpg" alt="" /></span>
+							<h3>Blurred IU sharpened</h3>
+						</div>
+						<div class="col-3 col-12-medium imp-medium">
+							<span class="image fit"><img src="images/sharpened_grid_iu_blurred.jpg" alt="" /></span>
+							<h3>Grid of sharpened blurred IUs</h3>
+						</div>
+						<p>We do the same thing as above with the Gyeonghoeru Pavilion as we did with IU. This time around, we had to set the alpha much higher than the previous two (alpha=4) to make the image somewhat clear; this may be due to the fact that the blurred image is quite blurred, thus causing us to be missing a lot of high frequency information.</p>
+						<div class="col-3 col-12-medium">
+							<span class="image fit"><img src="images/kbg.jpg" alt="" /></span>
+							<h3>Original Gyeonghoeru</h3>
+						</div>
+						<div class="col-3 col-12-medium imp-medium">
+							<span class="image fit"><img src="images/kbg_blurred.jpg" alt="" /></span>
+							<h3>Blurred Gyeonghoeru</h3>
+						</div>
+						<div class="col-3 col-12-medium imp-medium">
+							<span class="image fit"><img src="images/kbg_sharpened.jpg" alt="" /></span>
+							<h3>Blurred Gyeonghoeru sharpened</h3>
+						</div>
+						<div class="col-3 col-12-medium imp-medium">
+							<span class="image fit"><img src="images/sharpened_grid_kbg_blurred.jpg" alt="" /></span>
+							<h3>Grid of sharpened blurred Gyeonghoeru Pavilions</h3>
+						</div>
+					</div>
+
+					<hr/>
+					<header class="major">
+						<h3>Part 2.2: Hybrid Images</h3>
+					</header>
+					<p>In this part, we attempt to create hybrid images using the approach described in the SIGGRAPH 2006 paper by Oliva, Torralba, and Schyns. We accomplish this by taking two images, aligning them, and passing each image through either a high-pass or a low-pass filter. Then, combining the high-frequency details of one image with the low-frequency components of another creates a hybrid image, which is perceived differently depending on the viewing distance.</p>
+					<div class="row gtr-150">
+						<p>Down below, we have three sets of images. This first set is Derek and Nutmeg, the second set is Irene and Seulgi (with the corresponding Fourier analysis), and the third set is Trump and a bald eagle.</p>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/lf_DerekPicture.jpg" alt="" /></span>
+							<h3>Derek aligned and low-passed</h3>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/hf_nutmeg.jpg" alt="" /></span>
+							<h3>Nutmeg aligned and high-passed</h3>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/hybrid_dermeg.jpg" alt="" /></span>
+							<h3>Dermeg hybrid image (Derek + Nutmeg)</h3>
+						</div>
+						<p>Here is my favorite hybrid image, which is between Irene and Seulgi (aka Seulrene). Down below, we can see the low-pass image, high-pass image, hybrid image, and their corresponding Fourier analysis. The photos are from Red Velvet's Summer Magic EP, and the resultant image is Seulrene. Given all of the Seulrene ships all these years, I am happy to see that the hybrid image works pretty nicely.</p>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/lf_seulgi.jpg" alt="" /></span>
+							<h3>Seulgi aligned and low-passed</h3>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/hf_irene.jpg" alt="" /></span>
+							<h3>Irene aligned and high-passed</h3>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/hybrid_seulrene.jpg" alt="" /></span>
+							<h3>Seulrene hybrid image (Seulgi + Irene)</h3>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/lf_fft_seulrene.jpg" alt="" /></span>
+							<h3>Seulgi aligned and low-passed FFT analysis</h3>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/hf_fft_seulrene.jpg" alt="" /></span>
+							<h3>Irene aligned and high-passed FFT analysis</h3>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/hybrid_fft_seulrene.jpg" alt="" /></span>
+							<h3>Seulrene hybrid image FFT analysis</h3>
+						</div>
+						<p>Last but not least, we have a blend between Trump and a bald eagle, which I have aptly named "freedom". This one doesn't seem to work as nicely as the other images despite trying various different levels of filter size and alpha. This is probably due to the fact that both images are fairly high frequence and the general outline of the images generally differ as well.</p>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/lf_trump.jpg" alt="" /></span>
+							<h3>Trump aligned and low-passed</h3>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/hf_eagle.jpg" alt="" /></span>
+							<h3>Bald eagle aligned and high-passed</h3>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/hybrid_freedom.jpg" alt="" /></span>
+							<h3>Freedom hybrid image (Trump + bald eagle)</h3>
+						</div>
+					</div>
+
+					<hr/>
+					<header class="major">
+						<h3>Part 2.3: Gaussian and Laplacian Stacks</h3>
+					</header>
+					<p>In this part, we implement the Gaussian and a Laplacian stacks. I first computed the Guassian stack by continually blurring the original image; as we go down the stack, we increase the sigma so that the image gets more blurred. As for the Laplacian stack, we take the difference between consecutive elements in the Gaussian stack with the last element being the same as the last element in the Gaussian stack.</p>
+					<div class="row gtr-150">
+						<div class="col-12 col-12-medium">
+							<span class="image fit"><img src="images/gs_ls_orange.jpeg" alt="" /></span>
+							<h3>Gaussian and Laplacian stacks for orange</h3>
+						</div>
+						<div class="col-12 col-12-medium">
+							<span class="image fit"><img src="images/gs_ls_apple.jpeg" alt="" /></span>
+							<h3>Gaussian and Laplacian stacks for apple</h3>
+						</div>
+					</div>
+
+					<hr/>
+					<header class="major">
+						<h3>Part 2.4: Multiresolution Blending</h3>
+					</header>
+					<p>We have finally reached the part of the project that has the oraple. In this part, we utilize the Gaussian and Laplacian stacks from part 2.3 to do multiresolution blending. In each row, we will show the two images that were used, the mask, and the final blended image.</p>
+					<p>Orange + Apple = Oraple</p>
+					<div class="row gtr-150">
+						<div class="col-3 col-12-medium">
+							<span class="image fit"><img src="images/apple.jpeg" alt="" /></span>
+							<h3>Apple</h3>
+						</div>
+						<div class="col-3 col-12-medium">
+							<span class="image fit"><img src="images/orange.jpeg" alt="" /></span>
+							<h3>Orange</h3>
+						</div>
+						<div class="col-3 col-12-medium">
+							<span class="image fit"><img src="images/oraple_mask.jpg" alt="" /></span>
+							<h3>Oraple mask</h3>
+						</div>
+						<div class="col-3 col-12-medium">
+							<span class="image fit"><img src="images/oraple.jpg" alt="" /></span>
+							<h3>Oraple</h3>
+						</div>
+					</div>
+					<p>Campanile + Hoover = Hoovernile</p>
+					<div class="row gtr-150">
+						<div class="col-3 col-12-medium">
+							<span class="image fit"><img src="images/campanile.jpg" alt="" /></span>
+							<h3>Campanile</h3>
+						</div>
+						<div class="col-3 col-12-medium">
+							<span class="image fit"><img src="images/hoover.jpg" alt="" /></span>
+							<h3>Hoover</h3>
+						</div>
+						<div class="col-3 col-12-medium">
+							<span class="image fit"><img src="images/hoover_mask.jpg" alt="" /></span>
+							<h3>Towers mask</h3>
+						</div>
+						<div class="col-3 col-12-medium">
+							<span class="image fit"><img src="images/hoovernile.jpg" alt="" /></span>
+							<h3>Hoovernile</h3>
+						</div>
+					</div>
+					<p>Red Bull (RB19) + Mercedes (W13) = Silver Wings</p>
+					<div class="row gtr-150">
+						<div class="col-3 col-12-medium">
+							<span class="image fit"><img src="images/rb19.jpg" alt="" /></span>
+							<h3>Red Bull</h3>
+						</div>
+						<div class="col-3 col-12-medium">
+							<span class="image fit"><img src="images/w13.jpg" alt="" /></span>
+							<h3>Mercedes</h3>
+						</div>
+						<div class="col-3 col-12-medium">
+							<span class="image fit"><img src="images/f1_mask.jpg" alt="" /></span>
+							<h3>F1 mask</h3>
+						</div>
+						<div class="col-3 col-12-medium">
+							<span class="image fit"><img src="images/silver_wings.jpg" alt="" /></span>
+							<h3>Silver Wings</h3>
+						</div>
+					</div>
+					<p>My favorite blending is the one for Silver Wings, so here are the Laplacians stacks for the masked input images and the resultant blended image.</p>
+					<div class="col-3 col-12-medium">
+						<span class="image fit"><img src="images/blend_pyramids.jpg" alt="" /></span>
+					</div>
+				</div>
+			</section>
+
+			<!-- Four -->
+			<hr/>
+				<section id="Four" class="main style1 special">
+					<div class="container">
+						<header class="major">
+							<h2>Reflection + Acknowledgements</h2>
+						</header>
+						<header class="major">
+							<h3>Reflection</h3>
+						</header>
+						<p>My key takeaway is learning how to transform images using frequency analysis. Although I’ve learned about signal processing and frequency analysis in the classroom, this is my first time applying this theory in practice. It was pretty cool to see how we can implement frequency-based methods to blend images and utilize basic techniques to create effects commonly seen in photo editing software, almost fully from scratch.</p>
+						<hr/>
+						<header class="major">
+							<h3>Acknowledgements</h3>
+						</header>
+						<p>This project is part of the Fall 2024 offering of CS180: Intro to Computer Vision and Computational Photography, at UC Berkeley. This website template is modified from HTML5 UP, and the images are from various sources from Google.</p>
+					</div>
+				</section>
+			
+			
+
+		<!-- Five -->
+		<!--
+			<section id="five" class="main style1">
+				<div class="container">
+					<header class="major special">
+						<h2>Elements</h2>
+					</header>
+
+					<section>
+						<h4>Text</h4>
+						<p>This is <b>bold</b> and this is <strong>strong</strong>. This is <i>italic</i> and this is <em>emphasized</em>.
+						This is <sup>superscript</sup> text and this is <sub>subscript</sub> text.
+						This is <u>underlined</u> and this is code: <code>for (;;) { ... }</code>. Finally, <a href="#">this is a link</a>.</p>
+						<hr />
+						<header>
+							<h4>Heading with a Subtitle</h4>
+							<p>Lorem ipsum dolor sit amet nullam id egestas urna aliquam</p>
+						</header>
+						<p>Nunc lacinia ante nunc ac lobortis. Interdum adipiscing gravida odio porttitor sem non mi integer non faucibus ornare mi ut ante amet placerat aliquet. Volutpat eu sed ante lacinia sapien lorem accumsan varius montes viverra nibh in adipiscing blandit tempus accumsan.</p>
+						<header>
+							<h5>Heading with a Subtitle</h5>
+							<p>Lorem ipsum dolor sit amet nullam id egestas urna aliquam</p>
+						</header>
+						<p>Nunc lacinia ante nunc ac lobortis. Interdum adipiscing gravida odio porttitor sem non mi integer non faucibus ornare mi ut ante amet placerat aliquet. Volutpat eu sed ante lacinia sapien lorem accumsan varius montes viverra nibh in adipiscing blandit tempus accumsan.</p>
+						<hr />
+						<h2>Heading Level 2</h2>
+						<h3>Heading Level 3</h3>
+						<h4>Heading Level 4</h4>
+						<h5>Heading Level 5</h5>
+						<h6>Heading Level 6</h6>
+						<hr />
+						<h5>Blockquote</h5>
+						<blockquote>Fringilla nisl. Donec accumsan interdum nisi, quis tincidunt felis sagittis eget tempus euismod. Vestibulum ante ipsum primis in faucibus vestibulum. Blandit adipiscing eu felis iaculis volutpat ac adipiscing accumsan faucibus. Vestibulum ante ipsum primis in faucibus lorem ipsum dolor sit amet nullam adipiscing eu felis.</blockquote>
+						<h5>Preformatted</h5>
+						<pre><code>i = 0;
+
+while (!deck.isInOrder()) {
+print 'Iteration ' + i;
+deck.shuffle();
+i++;
+}
+
+print 'It took ' + i + ' iterations to sort the deck.';</code></pre>
+					</section>
+
+					<section>
+						<h4>Lists</h4>
+						<div class="row">
+							<div class="col-6 col-12-medium">
+								<h5>Unordered</h5>
+								<ul>
+									<li>Dolor pulvinar etiam.</li>
+									<li>Sagittis adipiscing.</li>
+									<li>Felis enim feugiat.</li>
+								</ul>
+								<h5>Alternate</h5>
+								<ul class="alt">
+									<li>Dolor pulvinar etiam.</li>
+									<li>Sagittis adipiscing.</li>
+									<li>Felis enim feugiat.</li>
+								</ul>
+							</div>
+							<div class="col-6 col-12-medium">
+								<h5>Ordered</h5>
+								<ol>
+									<li>Dolor pulvinar etiam.</li>
+									<li>Etiam vel felis viverra.</li>
+									<li>Felis enim feugiat.</li>
+									<li>Dolor pulvinar etiam.</li>
+									<li>Etiam vel felis lorem.</li>
+									<li>Felis enim et feugiat.</li>
+								</ol>
+								<h5>Icons</h5>
+								<ul class="icons">
+									<li><a href="#" class="icon brands fa-twitter"><span class="label">Twitter</span></a></li>
+									<li><a href="#" class="icon brands fa-facebook-f"><span class="label">Facebook</span></a></li>
+									<li><a href="#" class="icon brands fa-instagram"><span class="label">Instagram</span></a></li>
+									<li><a href="#" class="icon brands fa-github"><span class="label">Github</span></a></li>
+								</ul>
+							</div>
+						</div>
+						<h5>Actions</h5>
+						<div class="row">
+							<div class="col-6 col-12-medium">
+								<ul class="actions">
+									<li><a href="#" class="button primary">Default</a></li>
+									<li><a href="#" class="button">Default</a></li>
+								</ul>
+								<ul class="actions small">
+									<li><a href="#" class="button primary small">Small</a></li>
+									<li><a href="#" class="button small">Small</a></li>
+								</ul>
+								<ul class="actions stacked">
+									<li><a href="#" class="button primary">Default</a></li>
+									<li><a href="#" class="button">Default</a></li>
+								</ul>
+								<ul class="actions stacked">
+									<li><a href="#" class="button primary small">Small</a></li>
+									<li><a href="#" class="button small">Small</a></li>
+								</ul>
+							</div>
+							<div class="col-6 col-12-medium">
+								<ul class="actions stacked">
+									<li><a href="#" class="button primary fit">Default</a></li>
+									<li><a href="#" class="button fit">Default</a></li>
+								</ul>
+								<ul class="actions stacked">
+									<li><a href="#" class="button primary small fit">Small</a></li>
+									<li><a href="#" class="button small fit">Small</a></li>
+								</ul>
+							</div>
+						</div>
+					</section>
+
+					<section>
+						<h4>Table</h4>
+						<h5>Default</h5>
+						<div class="table-wrapper">
+							<table>
+								<thead>
+									<tr>
+										<th>Name</th>
+										<th>Description</th>
+										<th>Price</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr>
+										<td>Item One</td>
+										<td>Ante turpis integer aliquet porttitor.</td>
+										<td>29.99</td>
+									</tr>
+									<tr>
+										<td>Item Two</td>
+										<td>Vis ac commodo adipiscing arcu aliquet.</td>
+										<td>19.99</td>
+									</tr>
+									<tr>
+										<td>Item Three</td>
+										<td> Morbi faucibus arcu accumsan lorem.</td>
+										<td>29.99</td>
+									</tr>
+									<tr>
+										<td>Item Four</td>
+										<td>Vitae integer tempus condimentum.</td>
+										<td>19.99</td>
+									</tr>
+									<tr>
+										<td>Item Five</td>
+										<td>Ante turpis integer aliquet porttitor.</td>
+										<td>29.99</td>
+									</tr>
+								</tbody>
+								<tfoot>
+									<tr>
+										<td colspan="2"></td>
+										<td>100.00</td>
+									</tr>
+								</tfoot>
+							</table>
+						</div>
+
+						<h5>Alternate</h5>
+						<div class="table-wrapper">
+							<table class="alt">
+								<thead>
+									<tr>
+										<th>Name</th>
+										<th>Description</th>
+										<th>Price</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr>
+										<td>Item One</td>
+										<td>Ante turpis integer aliquet porttitor.</td>
+										<td>29.99</td>
+									</tr>
+									<tr>
+										<td>Item Two</td>
+										<td>Vis ac commodo adipiscing arcu aliquet.</td>
+										<td>19.99</td>
+									</tr>
+									<tr>
+										<td>Item Three</td>
+										<td> Morbi faucibus arcu accumsan lorem.</td>
+										<td>29.99</td>
+									</tr>
+									<tr>
+										<td>Item Four</td>
+										<td>Vitae integer tempus condimentum.</td>
+										<td>19.99</td>
+									</tr>
+									<tr>
+										<td>Item Five</td>
+										<td>Ante turpis integer aliquet porttitor.</td>
+										<td>29.99</td>
+									</tr>
+								</tbody>
+								<tfoot>
+									<tr>
+										<td colspan="2"></td>
+										<td>100.00</td>
+									</tr>
+								</tfoot>
+							</table>
+						</div>
+					</section>
+
+					<section>
+						<h4>Buttons</h4>
+						<ul class="actions">
+							<li><a href="#" class="button primary">Primary</a></li>
+							<li><a href="#" class="button">Default</a></li>
+						</ul>
+						<ul class="actions">
+							<li><a href="#" class="button large">Large</a></li>
+							<li><a href="#" class="button">Default</a></li>
+							<li><a href="#" class="button small">Small</a></li>
+						</ul>
+						<ul class="actions fit">
+							<li><a href="#" class="button fit">Fit</a></li>
+							<li><a href="#" class="button primary fit">Fit</a></li>
+							<li><a href="#" class="button fit">Fit</a></li>
+						</ul>
+						<ul class="actions fit small">
+							<li><a href="#" class="button primary fit small">Fit + Small</a></li>
+							<li><a href="#" class="button fit small">Fit + Small</a></li>
+							<li><a href="#" class="button primary fit small">Fit + Small</a></li>
+						</ul>
+						<ul class="actions">
+							<li><a href="#" class="button primary icon solid fa-download">Icon</a></li>
+							<li><a href="#" class="button icon solid fa-download">Icon</a></li>
+						</ul>
+						<ul class="actions">
+							<li><span class="button primary disabled">Disabled</span></li>
+							<li><span class="button disabled">Disabled</span></li>
+						</ul>
+					</section>
+
+					<section>
+						<h4>Form</h4>
+						<form method="post" action="#">
+							<div class="row gtr-uniform gtr-50">
+								<div class="col-6 col-12-xsmall">
+									<input type="text" name="demo-name" id="demo-name" value="" placeholder="Name" />
+								</div>
+								<div class="col-6 col-12-xsmall">
+									<input type="email" name="demo-email" id="demo-email" value="" placeholder="Email" />
+								</div>
+								<div class="col-12">
+									<select name="demo-category" id="demo-category">
+										<option value="">- Category -</option>
+										<option value="1">Manufacturing</option>
+										<option value="1">Shipping</option>
+										<option value="1">Administration</option>
+										<option value="1">Human Resources</option>
+									</select>
+								</div>
+								<div class="col-4 col-12-small">
+									<input type="radio" id="demo-priority-low" name="demo-priority" checked>
+									<label for="demo-priority-low">Low</label>
+								</div>
+								<div class="col-4 col-12-small">
+									<input type="radio" id="demo-priority-normal" name="demo-priority">
+									<label for="demo-priority-normal">Normal</label>
+								</div>
+								<div class="col-4 col-12-small">
+									<input type="radio" id="demo-priority-high" name="demo-priority">
+									<label for="demo-priority-high">High</label>
+								</div>
+								<div class="col-6 col-12-small">
+									<input type="checkbox" id="demo-copy" name="demo-copy">
+									<label for="demo-copy">Email me a copy</label>
+								</div>
+								<div class="col-6 col-12-small">
+									<input type="checkbox" id="demo-human" name="demo-human" checked>
+									<label for="demo-human">Not a robot</label>
+								</div>
+								<div class="col-12">
+									<textarea name="demo-message" id="demo-message" placeholder="Enter your message" rows="6"></textarea>
+								</div>
+								<div class="col-12">
+									<ul class="actions">
+										<li><input type="submit" value="Send Message" class="primary" /></li>
+										<li><input type="reset" value="Reset" /></li>
+									</ul>
+								</div>
+							</div>
+						</form>
+					</section>
+
+					<section>
+						<h4>Image</h4>
+						<h5>Fit</h5>
+						<div class="box alt">
+							<div class="row gtr-uniform gtr-50">
+								<div class="col-12"><span class="image fit"><img src="images/pic06.jpg" alt="" /></span></div>
+								<div class="col-4"><span class="image fit"><img src="images/pic02.jpg" alt="" /></span></div>
+								<div class="col-4"><span class="image fit"><img src="images/pic03.jpg" alt="" /></span></div>
+								<div class="col-4"><span class="image fit"><img src="images/pic04.jpg" alt="" /></span></div>
+								<div class="col-4"><span class="image fit"><img src="images/pic03.jpg" alt="" /></span></div>
+								<div class="col-4"><span class="image fit"><img src="images/pic04.jpg" alt="" /></span></div>
+								<div class="col-4"><span class="image fit"><img src="images/pic02.jpg" alt="" /></span></div>
+								<div class="col-4"><span class="image fit"><img src="images/pic04.jpg" alt="" /></span></div>
+								<div class="col-4"><span class="image fit"><img src="images/pic02.jpg" alt="" /></span></div>
+								<div class="col-4"><span class="image fit"><img src="images/pic03.jpg" alt="" /></span></div>
+							</div>
+						</div>
+						<h5>Left &amp; Right</h5>
+						<p><span class="image left"><img src="images/pic05.jpg" alt="" /></span>Fringilla nisl. Donec accumsan interdum nisi, quis tincidunt felis sagittis eget. tempus euismod. Vestibulum ante ipsum primis in faucibus vestibulum. Blandit adipiscing eu felis iaculis volutpat ac adipiscing accumsan eu faucibus. Integer ac pellentesque praesent tincidunt felis sagittis eget. tempus euismod. Vestibulum ante ipsum primis in faucibus vestibulum. Blandit adipiscing eu felis iaculis volutpat ac adipiscing accumsan eu faucibus. Integer ac pellentesque praesent. Donec accumsan interdum nisi, quis tincidunt felis sagittis eget. tempus euismod. Vestibulum ante ipsum primis in faucibus vestibulum. Blandit adipiscing eu felis iaculis volutpat ac adipiscing accumsan eu faucibus. Integer ac pellentesque praesent tincidunt felis sagittis eget. tempus euismod. Vestibulum ante ipsum primis in faucibus vestibulum. Blandit adipiscing eu felis iaculis volutpat ac adipiscing accumsan eu faucibus. Integer ac pellentesque praesent. Blandit adipiscing eu felis iaculis volutpat ac adipiscing accumsan eu faucibus. Integer ac pellentesque praesent tincidunt felis sagittis eget. tempus euismod. Vestibulum ante ipsum primis in faucibus vestibulum. Blandit adipiscing eu felis iaculis volutpat ac adipiscing accumsan eu faucibus. Integer ac pellentesque praesent.</p>
+						<p><span class="image right"><img src="images/pic05.jpg" alt="" /></span>Fringilla nisl. Donec accumsan interdum nisi, quis tincidunt felis sagittis eget. tempus euismod. Vestibulum ante ipsum primis in faucibus vestibulum. Blandit adipiscing eu felis iaculis volutpat ac adipiscing accumsan eu faucibus. Integer ac pellentesque praesent tincidunt felis sagittis eget. tempus euismod. Vestibulum ante ipsum primis in faucibus vestibulum. Blandit adipiscing eu felis iaculis volutpat ac adipiscing accumsan eu faucibus. Integer ac pellentesque praesent. Donec accumsan interdum nisi, quis tincidunt felis sagittis eget. tempus euismod. Vestibulum ante ipsum primis in faucibus vestibulum. Blandit adipiscing eu felis iaculis volutpat ac adipiscing accumsan eu faucibus. Integer ac pellentesque praesent tincidunt felis sagittis eget. tempus euismod. Vestibulum ante ipsum primis in faucibus vestibulum. Blandit adipiscing eu felis iaculis volutpat ac adipiscing accumsan eu faucibus. Integer ac pellentesque praesent. Blandit adipiscing eu felis iaculis volutpat ac adipiscing accumsan eu faucibus. Integer ac pellentesque praesent tincidunt felis sagittis eget. tempus euismod. Vestibulum ante ipsum primis in faucibus vestibulum. Blandit adipiscing eu felis iaculis volutpat ac adipiscing accumsan eu faucibus. Integer ac pellentesque praesent.</p>
+					</section>
+
+				</div>
+			</section>
+		-->
+
+		<!-- Footer -->
+			<section id="footer">
+				<!-- <ul class="icons">
+					<li><a href="#" class="icon brands alt fa-twitter"><span class="label">Twitter</span></a></li>
+					<li><a href="#" class="icon brands alt fa-facebook-f"><span class="label">Facebook</span></a></li>
+					<li><a href="#" class="icon brands alt fa-instagram"><span class="label">Instagram</span></a></li>
+					<li><a href="#" class="icon brands alt fa-github"><span class="label">GitHub</span></a></li>
+					<li><a href="#" class="icon solid alt fa-envelope"><span class="label">Email</span></a></li>
+				</ul> -->
+				<ul class="copyright">
+					<li>&copy; 2024</li><li>Design: <a href="http://html5up.net">HTML5 UP</a></li>
+				</ul>
+			</section>
+
+		<!-- Scripts -->
+			<script src="assets/js/jquery.min.js"></script>
+			<script src="assets/js/jquery.scrolly.min.js"></script>
+			<script src="assets/js/browser.min.js"></script>
+			<script src="assets/js/breakpoints.min.js"></script>
+			<script src="assets/js/util.js"></script>
+			<script src="assets/js/main.js"></script>
+
+	</body>
+</html>
+
+
+
+		<!-- Two -->
+		<!-- <section id="two" class="main style2">
+			<div class="container">
+				<div class="row gtr-150">
+					<div class="col-6 col-12-medium">
+						<ul class="major-icons">
+							<li><span class="icon solid style1 major fa-code"></span></li>
+							<li><span class="icon solid style2 major fa-bolt"></span></li>
+							<li><span class="icon solid style3 major fa-camera-retro"></span></li>
+							<li><span class="icon solid style4 major fa-cog"></span></li>
+							<li><span class="icon solid style5 major fa-desktop"></span></li>
+							<li><span class="icon solid style6 major fa-calendar"></span></li>
+						</ul>
+					</div>
+					<div class="col-6 col-12-medium">
+						<header class="major">
+							<h2>Lorem ipsum dolor adipiscing<br />
+							amet dolor consequat</h2>
+						</header>
+						<p>Adipiscing a commodo ante nunc accumsan interdum mi ante adipiscing. A nunc lobortis non nisl amet vis volutpat aclacus nascetur ac non. Lorem curae eu ante amet sapien in tempus ac. Adipiscing id accumsan adipiscing ipsum.</p>
+						<p>Blandit faucibus proin. Ac aliquam integer adipiscing enim non praesent vis commodo nunc phasellus cubilia ac risus accumsan. Accumsan blandit. Lobortis phasellus non lobortis dit varius mi varius accumsan lobortis. Blandit ante aliquam lacinia lorem lobortis semper morbi col faucibus vitae integer placerat accumsan orci eu mi odio tempus adipiscing adipiscing adipiscing curae consequat feugiat etiam dolore.</p>
+						<p>Adipiscing a commodo ante nunc accumsan interdum mi ante adipiscing. A nunc lobortis non nisl amet vis volutpat aclacus nascetur ac non. Lorem curae eu ante amet sapien in tempus ac. Adipiscing id accumsan adipiscing ipsum.</p>
+					</div>
+				</div>
+			</div>
+		</section> -->
+
+		
+
+		<!-- Four -->
+		<!-- <section id="four" class="main style2 special">
+			<div class="container">
+				<header class="major">
+					<h2>Ipsum feugiat consequat?</h2>
+				</header>
+				<p>Sed lacus nascetur ac ante amet sapien.</p>
+				<ul class="actions special">
+					<li><a href="#" class="button wide primary">Sign Up</a></li>
+					<li><a href="#" class="button wide">Learn More</a></li>
+				</ul>
+			</div>
+		</section> -->
