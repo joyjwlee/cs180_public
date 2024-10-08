@@ -298,61 +298,10 @@
 			<section id="Seven" class="main style1 special">
 				<div class="container">
 					<header class="major">
-						<h2>Part 5: Caricatures: Extrapolating from the Mean</h2>
-						<p>using various values of alpha</p>
+						<h2>Bells and Whistles</h2>
+						<p>face-morphing music video ft. my friends</p>
 					</header>
-					<p>In this section, I use the mean Dane face from the previous section to extrapolate my features. This is accomplished by using <code>diff</code> and <code>alpha</code>. We define <code>diff := average_face_geometry - my_face_geometry</code> and <code>alpha</code> to be any real-valued scalar. Then, we get <code>extrapolated := my_face_geometry + alpha * diff</code>. </p>
-					<div class="row gtr-150">
-						<div class="col-3 col-12-medium">
-							<span class="image fit"><img src="images/extrapolated_0.jpg" alt="" /></span>
-							<p>alpha = -1</p>
-						</div>
-						<div class="col-3 col-12-medium">
-							<span class="image fit"><img src="images/extrapolated_1.jpg" alt="" /></span>
-							<p>alpha = -0.75</p>
-						</div>
-						<div class="col-3 col-12-medium">
-							<span class="image fit"><img src="images/extrapolated_2.jpg" alt="" /></span>
-							<p>alpha = -0.5</p>
-						</div>
-						<div class="col-3 col-12-medium">
-							<span class="image fit"><img src="images/extrapolated_3.jpg" alt="" /></span>
-							<p>alpha = -0.25</p>
-						</div>
-						<div class="col-3 col-12-medium">
-							<span class="image fit"><img src="images/extrapolated_4.jpg" alt="" /></span>
-							<p>alpha = 0 (equivalent to my original image)</p>
-						</div>
-						<div class="col-3 col-12-medium">
-							<span class="image fit"><img src="images/extrapolated_5.jpg" alt="" /></span>
-							<p>alpha = 0.25</p>
-						</div>
-						<div class="col-3 col-12-medium">
-							<span class="image fit"><img src="images/extrapolated_6.jpg" alt="" /></span>
-							<p>alpha = 0.5</p>
-						</div>
-						<div class="col-3 col-12-medium">
-							<span class="image fit"><img src="images/extrapolated_7.jpg" alt="" /></span>
-							<p>alpha = 0.75</p>
-						</div>
-						<div class="col-3 col-12-medium">
-							<span class="image fit"><img src="images/extrapolated_8.jpg" alt="" /></span>
-							<p>alpha = 1</p>
-						</div>
-						<div class="col-3 col-12-medium">
-							<span class="image fit"><img src="images/extrapolated_9.jpg" alt="" /></span>
-							<p>alpha = 1.25</p>
-						</div>
-						<div class="col-3 col-12-medium">
-							<span class="image fit"><img src="images/extrapolated_10.jpg" alt="" /></span>
-							<p>alpha = 1.5</p>
-						</div>
-						<div class="col-3 col-12-medium">
-							<span class="image fit"><img src="images/extrapolated_11.jpg" alt="" /></span>
-							<p>alpha = 1.75</p>
-						</div>
-					</div>
-					<p>Mathematically, it makes sense that having <code>alpha = 0</code> results in my original image. Looking at the the more extreme values of <code>alpha</code> (further away from 0), we can see my face taking on more extreme morphs to the point where it seems as if there are sampling artifacts.</p>
+					<p>TODO -- EMBED VIDEO/GIF HERE</p>
 				</div>
 			</section>
 
@@ -366,12 +315,12 @@
 					<header class="major">
 						<h3>Reflection</h3>
 					</header>
-					<p>My key takeaway is learning how to transform images using frequency analysis. Although I’ve learned about signal processing and frequency analysis in the classroom, this is my first time applying this theory in practice. It was pretty cool to see how we can implement frequency-based methods to blend images and utilize basic techniques to create effects commonly seen in photo editing software, almost fully from scratch.</p>
+					<p>My key takeaway is learning how to morph faces using inverse warping. By clever use of linear interpolation for practically everything, I was able to create very convincing, cool gifs. All in all, this was a quite enjoyable project, and I had lots of fun experimenting around with my own face as well as my friends faces in the process.</p>
 					<hr/>
 					<header class="major">
 						<h3>Acknowledgements</h3>
 					</header>
-					<p>This project is part of the Fall 2024 offering of CS180: Intro to Computer Vision and Computational Photography, at UC Berkeley. This website template is modified from HTML5 UP, and the images are from various sources from Google.</p>
+					<p>This project is part of the Fall 2024 offering of CS180: Intro to Computer Vision and Computational Photography, at UC Berkeley. This website template is modified from HTML5 UP, and the images are from myself, my friends, and the Danes dataset.</p>
 				</div>
 			</section>
 			
