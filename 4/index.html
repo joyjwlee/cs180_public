@@ -1,0 +1,774 @@
+<!DOCTYPE HTML>
+<!--
+	Photon by HTML5 UP
+	html5up.net | @ajlkn
+	Free for personal and commercial use under the CCA 3.0 license (html5up.net/license)
+-->
+<html>
+	<head>
+		<title>Project 4: (Auto)Stitching and Photo Mosaics</title>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+		<link rel="stylesheet" href="assets/css/main.css" />
+		<noscript><link rel="stylesheet" href="assets/css/noscript.css" /></noscript>
+	</head>
+	<body class="is-preload">
+
+		<!-- Header -->
+			<section id="header">
+				<div class="inner">
+					<span class="icon solid major fa-cloud"></span>
+					<h1><strong></strong>Project 4: (Auto)Stitching and Photo Mosaics</strong></h1>
+					<h2>Jaewon Lee (SID: 3036696329)</h2>
+					<ul class="actions special">
+						<li><a href="#one" class="button scrolly">Let's go!</a></li>
+					</ul>
+				</div>
+			</section>
+
+		<!-- One -->
+			<section id="one" class="main style1">
+				<div class="container">
+					<div class="row gtr-150">
+						<div class="col-6 col-12-medium">
+							<header class="major">
+								<h2>Overview</h2>
+							</header>
+							<p>This project is split into two parts: 4a (image warping and mosaicing) and 4b (feature matching and autostitching).</p>
+							<p>In project 4a, I have done the following:</p>
+							<ol>
+								<li>Shoot the pictures that's used for rectification and creating mosaics</li>
+								<li>Explain how to recover homographies</li>
+								<li>Warp the images</li>
+								<li>Rectify the images</li>
+								<li>Blend the images into a mosaic</li>
+							</ol>
+							<p>In project 4b, I have done the following:</p>
+							<ol>
+								<li>TBD, COMING SOON</li>
+							</ol>
+						</div>
+						<div class="col-6 col-12-medium imp-medium">
+							<span class="image fit"><img src="images/sproul_mosaic_normalized.jpg" alt="" /></span>
+							<p>Mosaic of Sproul Hall</p>
+						</div>
+					</div>
+				</div>
+			</section>
+
+		<!-- Two -->
+		<hr/>
+			<section id="Two" class="main style1 special">
+				<div class="container">
+					<header class="major">
+						<h2>4A Part 1: Shoot the Pictures</h2>
+						<p>going to Sproul and rooftops around campus</p>
+					</header>
+					<p>All of these pictures, except for three, are taken by me on my iPhone. The three images not taken by me are taken by my friend, Rohan Gulati (who is also taking this class), when we went to the Standard rooftop together to take pictures for CS 180; I used his pictures to create a mosaic of the view from the Standard rooftop.</p>
+					<div class="row gtr-150">
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/laptop.jpg" alt="" /></span>
+							<h3>My laptop</h3>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/mlk_poster.jpg" alt="" /></span>
+							<h3>Poster of MLK in MLK</h3>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/sproul_bulletin.jpg" alt="" /></span>
+							<h3>Bulletin board on Upper Sproul</h3>
+						</div>
+						<div class="col-2 col-12-medium">
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/sproul_l.jpg" alt="" /></span>
+							<h3>Sproul Hall, left</h3>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/sproul_r.jpg" alt="" /></span>
+							<h3>Sproul Hall, right</h3>
+						</div>
+						<div class="col-2 col-12-medium">
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/std_l.jpg" alt="" /></span>
+							<h3>Standard rooftop, left</h3>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/std_m.jpg" alt="" /></span>
+							<h3>Standard rooftop, middle</h3>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/std_r.jpg" alt="" /></span>
+							<h3>Standard rooftop, right</h3>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/bc_l.jpg" alt="" /></span>
+							<h3>Berkeley Central rooftop, left</h3>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/bc_m.jpg" alt="" /></span>
+							<h3>Berkeley Central rooftop, middle</h3>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/bc_r.jpg" alt="" /></span>
+							<h3>Berkeley Central rooftop, right</h3>
+						</div>
+					</div>
+				</div>
+			</section>
+
+		<!-- Three -->
+		<hr/>
+			<section id="Three" class="main style1 special">
+				<div class="container">
+					<header class="major">
+						<h2>4A Part 2: Recover Homographies</h2>
+						<p>linalg and least squares for projective transforms; all LaTeX renders are created by me using this <a href="https://www.quicklatex.com/">website</a>.</p>
+					</header>
+					<p>For us to be able to warp our images -- and ultimately blend images to create a mosaic -- we need to know how to compute our homography matrix. We essentially want to map points <code>p</code> (from our input image) to <code>p'</code> (our output image) using the homography matrix <code>H</code>. This is done by taking the homogenous coordinates and doing a matrix multiplication <code>p' = Hp</code>.</p>
+					<p>Given points <code>(x, y)</code> and <code>(x', y')</code>, we have the following:</p>
+					<div class="row gtr-150">
+						<div class="col-12 col-12-medium">
+							<span class="image fit"><img src="images/eq1.png" alt="" /></span>
+							<h5>Left: <code>Hp = p'</code>; Right: matrix multiplication expanded out to a system of equations</h5>
+						</div>
+					</div>
+					<p>Our goal is to solve for the 8 unknowns in <code>H</code>. Since there are 8 unknowns, we need at least 4 pairs of points to solve for <code>H</code>. We can do this by stacking all of our equations into a matrix <code>A</code>, a vector <code>x</code>, and a vector <code>b</code>. <code>A</code> is a 2n x 8 matrix, and <code>x</code> and </code><code>b</code> are 2n x 1 vectors, where n is the number of correspondence points we annotate our images with. <code>A</code> and <code>b</code> will consist of our knowns, and <code>x</code> is our unknowns that we will then use to construct <code>H</code>. Rearranging the equation from above to eliminate <code>w</code>, putting it into matrix multiplication, and generalizing from 1 point to n different points, we get the following:</p>
+					<div class="row gtr-150">
+						<div class="col-12 col-12-medium">
+							<span class="image fit"><img src="images/eq2.svg" alt="" /></span>
+						</div>
+					</div>
+					<p>Now, we have a system in the form of <code>Ax = b</code>, where we know the values in <code>A</code> and <code>b</code> and need to solve for <code>x</code>. Using least squares, we can solve for <code>x</code>:</p>
+					<div class="row gtr-150">
+						<div class="col-4 col-12-medium">
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/eq3.png" alt="" /></span>
+						</div>
+						<div class="col-4 col-12-medium">
+						</div>
+					</div>
+					<p>From here, we use the values we compute in <code>x</code> to reconstruct <code>H</code>, and we are done! I've implemented this logic in a method called <code>computeH</code>. From here, I can call <code>H = computeH(im1_pts,im2_pts)</code> and use <code>H</code> where necessary.</p>
+				</div>
+			</section>
+
+		<!-- Four -->
+		<hr/>
+			<section id="Four" class="main style1 special">
+				<div class="container">
+					<header class="major">
+						<h2>4A Part 3: Warp the Images</h2>
+						<p>a prelude to image rectification</p>
+					</header>
+					<p>Now that we know how to compute the homography matrix, we need to implement how to actually warp the image. I've written a method that takes in the input image, the homography matrix, and returns the warped image. By calling <code>imwarped = warpImage(im,H)</code>, I am able to warp any image in any way I would like. As a preliminary test, I tried to morph the picture of a bulletin board on Upper Sproul so that the "vanishing point" would be on the other side of the image. I've also displayed the correspondence points, which I labeled using the <a href="https://cal-cs180.github.io/fa23/hw/proj3/tool.html">tool</a> provided to us.</p>
+					<div class="row gtr-150">
+						<div class="col-5 col-12-medium">
+							<span class="image fit"><img src="images/bulletin_annotated.jpg" alt="" /></span>
+							<h3>Bulletin board, original</h3>
+						</div>
+						<div class="col-2 col-12-medium">
+							<span class="image fit"><img src="" alt="" /></span>
+							<h3></h3>
+						</div>
+						<div class="col-5 col-12-medium">
+							<span class="image fit"><img src="images/bulletin_warped_annotated.jpg" alt="" /></span>
+							<h3>Bulletin board, warped</h3>
+						</div>
+					</div>
+					<p>We can see that the warping has gone pretty well, and I have achieved the result I wanted. Towards the left edge of the warped image, we can see that there is quite a bit of pixelation going on, but this is because (1) I downsized my images by 75% to reduce computing runtime and (2) that area of the image is greatly enlarged. Now that we know <code>warpImage</code> works, we can move on to image rectification.</p>
+				</div>
+			</section>
+
+		<!-- Five -->
+		<hr/>
+			<section id="Five" class="main style1 special">
+				<div class="container">
+					<header class="major">
+						<h2>4A Part 4: Rectify the Images</h2>
+						<p>a prelude to mosaicing</p>
+					</header>
+					<p>For my image rectification, I have decided to use a picture of my laptop and a picture of a poster of MLK -- the images are annotated with the correspondence points. Once again, we can see that the results came out quite nicely.</p>
+					<div class="row gtr-150">
+						<div class="col-3 col-12-medium">
+							<span class="image fit"><img src="images/laptop_annotated.jpg" alt="" /></span>
+							<p>My laptop, original</p>
+						</div>
+						<div class="col-3 col-12-medium">
+							<span class="image fit"><img src="images/laptop_rectified_annotated.jpg" alt="" /></span>
+							<p>My laptop, rectified</p>
+						</div>
+						<div class="col-3 col-12-medium">
+							<span class="image fit"><img src="images/mlk_annotated.jpg" alt="" /></span>
+							<p>MLK poster, original</p>
+						</div>
+						<div class="col-3 col-12-medium">
+							<span class="image fit"><img src="images/mlk_rectified_annotated.jpg" alt="" /></span>
+							<p>MLK poster, rectified</p>
+						</div>
+					</div>
+					<p>Now that image rectification works, we are ready to make some mosaics!</p>
+				</div>
+			</section>
+
+		<!-- Six -->
+		<hr/>
+			<section id="Six" class="main style1 special">
+				<div class="container">
+					<header class="major">
+						<h2>4A Part 5: Blend Images Into a Mosaic</h2>
+						<p>a prelude to feature matching for auto stitching</p>
+					</header>
+					<p>For my first mosaic, I took two pictures of Sproul Hall and rectified the middle portion of the facade. I took the average of the correspondence points, computed both images' homographies to the average points, and projected both images onto that transformation. Because I had moved my phone a bit too much while taking the left and right pictures, we can see that while the main facade of the building lined up pretty nicely (notice the lack of any artifacts on the words "SPROUL HALL"), the vertical lines by the stairs in the foreground are a bit off from each other. Otherwise, I realized that simply adding pictures together and renormalizing results in different intensities depending on whether or not the region is an overlap. To fix this, I computed the mask for both images, found the overlap mask, and re-weighted my values accordingly. Overall, I am pretty happy with how my first mosaic came out.</p>
+					<div class="row gtr-150">
+						<div class="col-3 col-12-medium">
+							<span class="image fit"><img src="images/sproul_l_annotated_all_pts.jpg" alt="" /></span>
+							<p>Sproul Hall, left</p>
+						</div>
+						<div class="col-3 col-12-medium">
+							<span class="image fit"><img src="images/sproul_r_annotated_all_pts.jpg" alt="" /></span>
+							<p>Sproul Hall, right</p>
+						</div>
+						<div class="col-3 col-12-medium">
+							<span class="image fit"><img src="images/sproul_l_warped.jpg" alt="" /></span>
+							<p>Sproul Hall, left, warped</p>
+						</div>
+						<div class="col-3 col-12-medium">
+							<span class="image fit"><img src="images/sproul_r_warped.jpg" alt="" /></span>
+							<p>Sproul Hall, right, warped</p>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/sproul_l_mask.jpg" alt="" /></span>
+							<p>Sproul Hall left mask</p>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/sproul_r_mask.jpg" alt="" /></span>
+							<p>Sproul Hall right mask</p>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/sproul_overlap_mask.jpg" alt="" /></span>
+							<p>Sproul Hall overlap mask</p>
+						</div>
+						<div class="col-6 col-12-medium">
+							<span class="image fit"><img src="images/sproul_mosaic.jpg" alt="" /></span>
+							<p>Sproul Hall mosaic, simple normalization</p>
+						</div>
+						<div class="col-6 col-12-medium">
+							<span class="image fit"><img src="images/sproul_mosaic_normalized.jpg" alt="" /></span>
+							<p>Sproul Hall mosaic, weighted average</p>
+						</div>
+					</div>
+					<p>Moving on to my second mosaic, from the Standard rooftop, I wanted to be a bit more ambitious and try stitching three images together. To accomplish this, I took the middle image and projected it to be half of its size along each dimension -- essentially scale down by 50% towards the center -- and calculated the homography <code>H_M</code>. Then, I calculated the homographies from the left and right images to the original middle image; let's call this <code>H_orig</code>. Then, to map the original left and right images to the scaled middle image, I multiplied their homography matrices <code>H_orig</code> with <code>H_M</code>, resulting in <code>H = H_orig @ H_M</code>. Then, by running <code>side_img_projected = warpImage(side_img_orig, H)</code>, I am able to do a one-shot projective transform. The input images with color-coded correspondence points, projected images, individual/overlap masks, and normalized/weighted mosaics are shown down below, in this order.</p>
+					<div class="row gtr-150">
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/std_l_annotated.jpg" alt="" /></span>
+							<p>Standard rooftop, left</p>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/std_m_annotated.jpg" alt="" /></span>
+							<p>Standard rooftop, middle</p>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/std_r_annotated.jpg" alt="" /></span>
+							<p>Standard rooftop, right</p>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/std_l_warped_annotated.jpg" alt="" /></span>
+							<p>Standard rooftop, left, warped</p>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/std_m_warped_annotated.jpg" alt="" /></span>
+							<p>Standard rooftop, middle, warped</p>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/std_r_warped_annotated.jpg" alt="" /></span>
+							<p>Standard rooftop, right, warped</p>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/std_l_mask.jpg" alt="" /></span>
+							<p>Standard rooftop left mask</p>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/std_m_mask.jpg" alt="" /></span>
+							<p>Standard rooftop middle mask</p>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/std_r_mask.jpg" alt="" /></span>
+							<p>Standard rooftop mask mask</p>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/std_overlap_mask.jpg" alt="" /></span>
+							<p>Standard rooftop overlap mask</p>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/std_mosaic.jpg" alt="" /></span>
+							<p>Standard rooftop mosaic, simple normalization</p>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/std_mosaic_normalized.jpg" alt="" /></span>
+							<p>Standard rooftop mosaic, weighted average</p>
+						</div>
+					</div>
+					<p>Finally, for my third mosaic, I used the same technique as above to create a mosaic from the Berkeley Central rooftop.</p>
+					<div class="row gtr-150">
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/bc_l_annotated.jpg" alt="" /></span>
+							<p>Berkeley Central rooftop, left</p>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/bc_m_annotated.jpg" alt="" /></span>
+							<p>Berkeley Central rooftop, middle</p>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/bc_r_annotated.jpg" alt="" /></span>
+							<p>Berkeley Central rooftop, right</p>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/bc_l_warped_annotated.jpg" alt="" /></span>
+							<p>Berkeley Central rooftop, left, warped</p>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/bc_m_warped_annotated.jpg" alt="" /></span>
+							<p>Berkeley Central rooftop, middle, warped</p>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/bc_r_warped_annotated.jpg" alt="" /></span>
+							<p>Berkeley Central rooftop, right, warped</p>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/bc_l_mask.jpg" alt="" /></span>
+							<p>Berkeley Central rooftop left mask</p>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/bc_m_mask.jpg" alt="" /></span>
+							<p>Berkeley Central rooftop middle mask</p>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/bc_r_mask.jpg" alt="" /></span>
+							<p>Berkeley Central rooftop mask mask</p>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/bc_overlap_mask.jpg" alt="" /></span>
+							<p>Berkeley Central rooftop overlap mask</p>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/bc_mosaic.jpg" alt="" /></span>
+							<p>Berkeley Central rooftop mosaic, simple normalization</p>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/bc_mosaic_normalized.jpg" alt="" /></span>
+							<p>Berkeley Central rooftop mosaic, weighted average</p>
+						</div>
+					</div>
+				</div>
+			</section>
+
+		<!-- Seven -->
+		<hr/>
+			<section id="Seven" class="main style1 special">
+				<div class="container">
+					<header class="major">
+						<h2>Reflection + Acknowledgements</h2>
+					</header>
+					<header class="major">
+						<h3>Reflection</h3>
+					</header>
+					<p>My key takeaway is that I should not be moving as much when taking the pictures for the mosaics. When I moved my phone too much, we can get nonoverlapping regions in the rest of the image, like the Sproul Hall mosaic as stated above. I really had to pivot my phone rather than my body to get the results I wanted. Otherwise, it was pretty cool to be making our own mosaics/panoramas from scratch with just linear algebra. One final remark is that Apple's camera color accuracy isn't entirely consistent. We can see this happening with the Sproul Hall mosaic, where there are color differences in the same location across the left and right photos -- despite me more or less taking the photos back to back.</p>
+					<hr/>
+					<header class="major">
+						<h3>Acknowledgements</h3>
+					</header>
+					<p>This project is part of the Fall 2024 offering of CS180: Intro to Computer Vision and Computational Photography, at UC Berkeley. This website template is modified from HTML5 UP, and the images are from myself and Rohan Gulati.</p>
+				</div>
+			</section>
+			
+			
+
+		<!-- Five -->
+		<!--
+			<section id="five" class="main style1">
+				<div class="container">
+					<header class="major special">
+						<h2>Elements</h2>
+					</header>
+
+					<section>
+						<h4>Text</h4>
+						<p>This is <b>bold</b> and this is <strong>strong</strong>. This is <i>italic</i> and this is <em>emphasized</em>.
+						This is <sup>superscript</sup> text and this is <sub>subscript</sub> text.
+						This is <u>underlined</u> and this is code: <code>for (;;) { ... }</code>. Finally, <a href="#">this is a link</a>.</p>
+						<hr />
+						<header>
+							<h4>Heading with a Subtitle</h4>
+							<p>Lorem ipsum dolor sit amet nullam id egestas urna aliquam</p>
+						</header>
+						<p>Nunc lacinia ante nunc ac lobortis. Interdum adipiscing gravida odio porttitor sem non mi integer non faucibus ornare mi ut ante amet placerat aliquet. Volutpat eu sed ante lacinia sapien lorem accumsan varius montes viverra nibh in adipiscing blandit tempus accumsan.</p>
+						<header>
+							<h5>Heading with a Subtitle</h5>
+							<p>Lorem ipsum dolor sit amet nullam id egestas urna aliquam</p>
+						</header>
+						<p>Nunc lacinia ante nunc ac lobortis. Interdum adipiscing gravida odio porttitor sem non mi integer non faucibus ornare mi ut ante amet placerat aliquet. Volutpat eu sed ante lacinia sapien lorem accumsan varius montes viverra nibh in adipiscing blandit tempus accumsan.</p>
+						<hr />
+						<h2>Heading Level 2</h2>
+						<h3>Heading Level 3</h3>
+						<h4>Heading Level 4</h4>
+						<h5>Heading Level 5</h5>
+						<h6>Heading Level 6</h6>
+						<hr />
+						<h5>Blockquote</h5>
+						<blockquote>Fringilla nisl. Donec accumsan interdum nisi, quis tincidunt felis sagittis eget tempus euismod. Vestibulum ante ipsum primis in faucibus vestibulum. Blandit adipiscing eu felis iaculis volutpat ac adipiscing accumsan faucibus. Vestibulum ante ipsum primis in faucibus lorem ipsum dolor sit amet nullam adipiscing eu felis.</blockquote>
+						<h5>Preformatted</h5>
+						<pre><code>i = 0;
+
+while (!deck.isInOrder()) {
+print 'Iteration ' + i;
+deck.shuffle();
+i++;
+}
+
+print 'It took ' + i + ' iterations to sort the deck.';</code></pre>
+					</section>
+
+					<section>
+						<h4>Lists</h4>
+						<div class="row">
+							<div class="col-6 col-12-medium">
+								<h5>Unordered</h5>
+								<ul>
+									<li>Dolor pulvinar etiam.</li>
+									<li>Sagittis adipiscing.</li>
+									<li>Felis enim feugiat.</li>
+								</ul>
+								<h5>Alternate</h5>
+								<ul class="alt">
+									<li>Dolor pulvinar etiam.</li>
+									<li>Sagittis adipiscing.</li>
+									<li>Felis enim feugiat.</li>
+								</ul>
+							</div>
+							<div class="col-6 col-12-medium">
+								<h5>Ordered</h5>
+								<ol>
+									<li>Dolor pulvinar etiam.</li>
+									<li>Etiam vel felis viverra.</li>
+									<li>Felis enim feugiat.</li>
+									<li>Dolor pulvinar etiam.</li>
+									<li>Etiam vel felis lorem.</li>
+									<li>Felis enim et feugiat.</li>
+								</ol>
+								<h5>Icons</h5>
+								<ul class="icons">
+									<li><a href="#" class="icon brands fa-twitter"><span class="label">Twitter</span></a></li>
+									<li><a href="#" class="icon brands fa-facebook-f"><span class="label">Facebook</span></a></li>
+									<li><a href="#" class="icon brands fa-instagram"><span class="label">Instagram</span></a></li>
+									<li><a href="#" class="icon brands fa-github"><span class="label">Github</span></a></li>
+								</ul>
+							</div>
+						</div>
+						<h5>Actions</h5>
+						<div class="row">
+							<div class="col-6 col-12-medium">
+								<ul class="actions">
+									<li><a href="#" class="button primary">Default</a></li>
+									<li><a href="#" class="button">Default</a></li>
+								</ul>
+								<ul class="actions small">
+									<li><a href="#" class="button primary small">Small</a></li>
+									<li><a href="#" class="button small">Small</a></li>
+								</ul>
+								<ul class="actions stacked">
+									<li><a href="#" class="button primary">Default</a></li>
+									<li><a href="#" class="button">Default</a></li>
+								</ul>
+								<ul class="actions stacked">
+									<li><a href="#" class="button primary small">Small</a></li>
+									<li><a href="#" class="button small">Small</a></li>
+								</ul>
+							</div>
+							<div class="col-6 col-12-medium">
+								<ul class="actions stacked">
+									<li><a href="#" class="button primary fit">Default</a></li>
+									<li><a href="#" class="button fit">Default</a></li>
+								</ul>
+								<ul class="actions stacked">
+									<li><a href="#" class="button primary small fit">Small</a></li>
+									<li><a href="#" class="button small fit">Small</a></li>
+								</ul>
+							</div>
+						</div>
+					</section>
+
+					<section>
+						<h4>Table</h4>
+						<h5>Default</h5>
+						<div class="table-wrapper">
+							<table>
+								<thead>
+									<tr>
+										<th>Name</th>
+										<th>Description</th>
+										<th>Price</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr>
+										<td>Item One</td>
+										<td>Ante turpis integer aliquet porttitor.</td>
+										<td>29.99</td>
+									</tr>
+									<tr>
+										<td>Item Two</td>
+										<td>Vis ac commodo adipiscing arcu aliquet.</td>
+										<td>19.99</td>
+									</tr>
+									<tr>
+										<td>Item Three</td>
+										<td> Morbi faucibus arcu accumsan lorem.</td>
+										<td>29.99</td>
+									</tr>
+									<tr>
+										<td>Item Four</td>
+										<td>Vitae integer tempus condimentum.</td>
+										<td>19.99</td>
+									</tr>
+									<tr>
+										<td>Item Five</td>
+										<td>Ante turpis integer aliquet porttitor.</td>
+										<td>29.99</td>
+									</tr>
+								</tbody>
+								<tfoot>
+									<tr>
+										<td colspan="2"></td>
+										<td>100.00</td>
+									</tr>
+								</tfoot>
+							</table>
+						</div>
+
+						<h5>Alternate</h5>
+						<div class="table-wrapper">
+							<table class="alt">
+								<thead>
+									<tr>
+										<th>Name</th>
+										<th>Description</th>
+										<th>Price</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr>
+										<td>Item One</td>
+										<td>Ante turpis integer aliquet porttitor.</td>
+										<td>29.99</td>
+									</tr>
+									<tr>
+										<td>Item Two</td>
+										<td>Vis ac commodo adipiscing arcu aliquet.</td>
+										<td>19.99</td>
+									</tr>
+									<tr>
+										<td>Item Three</td>
+										<td> Morbi faucibus arcu accumsan lorem.</td>
+										<td>29.99</td>
+									</tr>
+									<tr>
+										<td>Item Four</td>
+										<td>Vitae integer tempus condimentum.</td>
+										<td>19.99</td>
+									</tr>
+									<tr>
+										<td>Item Five</td>
+										<td>Ante turpis integer aliquet porttitor.</td>
+										<td>29.99</td>
+									</tr>
+								</tbody>
+								<tfoot>
+									<tr>
+										<td colspan="2"></td>
+										<td>100.00</td>
+									</tr>
+								</tfoot>
+							</table>
+						</div>
+					</section>
+
+					<section>
+						<h4>Buttons</h4>
+						<ul class="actions">
+							<li><a href="#" class="button primary">Primary</a></li>
+							<li><a href="#" class="button">Default</a></li>
+						</ul>
+						<ul class="actions">
+							<li><a href="#" class="button large">Large</a></li>
+							<li><a href="#" class="button">Default</a></li>
+							<li><a href="#" class="button small">Small</a></li>
+						</ul>
+						<ul class="actions fit">
+							<li><a href="#" class="button fit">Fit</a></li>
+							<li><a href="#" class="button primary fit">Fit</a></li>
+							<li><a href="#" class="button fit">Fit</a></li>
+						</ul>
+						<ul class="actions fit small">
+							<li><a href="#" class="button primary fit small">Fit + Small</a></li>
+							<li><a href="#" class="button fit small">Fit + Small</a></li>
+							<li><a href="#" class="button primary fit small">Fit + Small</a></li>
+						</ul>
+						<ul class="actions">
+							<li><a href="#" class="button primary icon solid fa-download">Icon</a></li>
+							<li><a href="#" class="button icon solid fa-download">Icon</a></li>
+						</ul>
+						<ul class="actions">
+							<li><span class="button primary disabled">Disabled</span></li>
+							<li><span class="button disabled">Disabled</span></li>
+						</ul>
+					</section>
+
+					<section>
+						<h4>Form</h4>
+						<form method="post" action="#">
+							<div class="row gtr-uniform gtr-50">
+								<div class="col-6 col-12-xsmall">
+									<input type="text" name="demo-name" id="demo-name" value="" placeholder="Name" />
+								</div>
+								<div class="col-6 col-12-xsmall">
+									<input type="email" name="demo-email" id="demo-email" value="" placeholder="Email" />
+								</div>
+								<div class="col-12">
+									<select name="demo-category" id="demo-category">
+										<option value="">- Category -</option>
+										<option value="1">Manufacturing</option>
+										<option value="1">Shipping</option>
+										<option value="1">Administration</option>
+										<option value="1">Human Resources</option>
+									</select>
+								</div>
+								<div class="col-4 col-12-small">
+									<input type="radio" id="demo-priority-low" name="demo-priority" checked>
+									<label for="demo-priority-low">Low</label>
+								</div>
+								<div class="col-4 col-12-small">
+									<input type="radio" id="demo-priority-normal" name="demo-priority">
+									<label for="demo-priority-normal">Normal</label>
+								</div>
+								<div class="col-4 col-12-small">
+									<input type="radio" id="demo-priority-high" name="demo-priority">
+									<label for="demo-priority-high">High</label>
+								</div>
+								<div class="col-6 col-12-small">
+									<input type="checkbox" id="demo-copy" name="demo-copy">
+									<label for="demo-copy">Email me a copy</label>
+								</div>
+								<div class="col-6 col-12-small">
+									<input type="checkbox" id="demo-human" name="demo-human" checked>
+									<label for="demo-human">Not a robot</label>
+								</div>
+								<div class="col-12">
+									<textarea name="demo-message" id="demo-message" placeholder="Enter your message" rows="6"></textarea>
+								</div>
+								<div class="col-12">
+									<ul class="actions">
+										<li><input type="submit" value="Send Message" class="primary" /></li>
+										<li><input type="reset" value="Reset" /></li>
+									</ul>
+								</div>
+							</div>
+						</form>
+					</section>
+
+					<section>
+						<h4>Image</h4>
+						<h5>Fit</h5>
+						<div class="box alt">
+							<div class="row gtr-uniform gtr-50">
+								<div class="col-12"><span class="image fit"><img src="images/pic06.jpg" alt="" /></span></div>
+								<div class="col-4"><span class="image fit"><img src="images/pic02.jpg" alt="" /></span></div>
+								<div class="col-4"><span class="image fit"><img src="images/pic03.jpg" alt="" /></span></div>
+								<div class="col-4"><span class="image fit"><img src="images/pic04.jpg" alt="" /></span></div>
+								<div class="col-4"><span class="image fit"><img src="images/pic03.jpg" alt="" /></span></div>
+								<div class="col-4"><span class="image fit"><img src="images/pic04.jpg" alt="" /></span></div>
+								<div class="col-4"><span class="image fit"><img src="images/pic02.jpg" alt="" /></span></div>
+								<div class="col-4"><span class="image fit"><img src="images/pic04.jpg" alt="" /></span></div>
+								<div class="col-4"><span class="image fit"><img src="images/pic02.jpg" alt="" /></span></div>
+								<div class="col-4"><span class="image fit"><img src="images/pic03.jpg" alt="" /></span></div>
+							</div>
+						</div>
+						<h5>Left &amp; Right</h5>
+						<p><span class="image left"><img src="images/pic05.jpg" alt="" /></span>Fringilla nisl. Donec accumsan interdum nisi, quis tincidunt felis sagittis eget. tempus euismod. Vestibulum ante ipsum primis in faucibus vestibulum. Blandit adipiscing eu felis iaculis volutpat ac adipiscing accumsan eu faucibus. Integer ac pellentesque praesent tincidunt felis sagittis eget. tempus euismod. Vestibulum ante ipsum primis in faucibus vestibulum. Blandit adipiscing eu felis iaculis volutpat ac adipiscing accumsan eu faucibus. Integer ac pellentesque praesent. Donec accumsan interdum nisi, quis tincidunt felis sagittis eget. tempus euismod. Vestibulum ante ipsum primis in faucibus vestibulum. Blandit adipiscing eu felis iaculis volutpat ac adipiscing accumsan eu faucibus. Integer ac pellentesque praesent tincidunt felis sagittis eget. tempus euismod. Vestibulum ante ipsum primis in faucibus vestibulum. Blandit adipiscing eu felis iaculis volutpat ac adipiscing accumsan eu faucibus. Integer ac pellentesque praesent. Blandit adipiscing eu felis iaculis volutpat ac adipiscing accumsan eu faucibus. Integer ac pellentesque praesent tincidunt felis sagittis eget. tempus euismod. Vestibulum ante ipsum primis in faucibus vestibulum. Blandit adipiscing eu felis iaculis volutpat ac adipiscing accumsan eu faucibus. Integer ac pellentesque praesent.</p>
+						<p><span class="image right"><img src="images/pic05.jpg" alt="" /></span>Fringilla nisl. Donec accumsan interdum nisi, quis tincidunt felis sagittis eget. tempus euismod. Vestibulum ante ipsum primis in faucibus vestibulum. Blandit adipiscing eu felis iaculis volutpat ac adipiscing accumsan eu faucibus. Integer ac pellentesque praesent tincidunt felis sagittis eget. tempus euismod. Vestibulum ante ipsum primis in faucibus vestibulum. Blandit adipiscing eu felis iaculis volutpat ac adipiscing accumsan eu faucibus. Integer ac pellentesque praesent. Donec accumsan interdum nisi, quis tincidunt felis sagittis eget. tempus euismod. Vestibulum ante ipsum primis in faucibus vestibulum. Blandit adipiscing eu felis iaculis volutpat ac adipiscing accumsan eu faucibus. Integer ac pellentesque praesent tincidunt felis sagittis eget. tempus euismod. Vestibulum ante ipsum primis in faucibus vestibulum. Blandit adipiscing eu felis iaculis volutpat ac adipiscing accumsan eu faucibus. Integer ac pellentesque praesent. Blandit adipiscing eu felis iaculis volutpat ac adipiscing accumsan eu faucibus. Integer ac pellentesque praesent tincidunt felis sagittis eget. tempus euismod. Vestibulum ante ipsum primis in faucibus vestibulum. Blandit adipiscing eu felis iaculis volutpat ac adipiscing accumsan eu faucibus. Integer ac pellentesque praesent.</p>
+					</section>
+
+				</div>
+			</section>
+		-->
+
+		<!-- Footer -->
+			<section id="footer">
+				<!-- <ul class="icons">
+					<li><a href="#" class="icon brands alt fa-twitter"><span class="label">Twitter</span></a></li>
+					<li><a href="#" class="icon brands alt fa-facebook-f"><span class="label">Facebook</span></a></li>
+					<li><a href="#" class="icon brands alt fa-instagram"><span class="label">Instagram</span></a></li>
+					<li><a href="#" class="icon brands alt fa-github"><span class="label">GitHub</span></a></li>
+					<li><a href="#" class="icon solid alt fa-envelope"><span class="label">Email</span></a></li>
+				</ul> -->
+				<ul class="copyright">
+					<li>&copy; 2024</li><li>Design: <a href="http://html5up.net">HTML5 UP</a></li>
+				</ul>
+			</section>
+
+		<!-- Scripts -->
+			<script src="assets/js/jquery.min.js"></script>
+			<script src="assets/js/jquery.scrolly.min.js"></script>
+			<script src="assets/js/browser.min.js"></script>
+			<script src="assets/js/breakpoints.min.js"></script>
+			<script src="assets/js/util.js"></script>
+			<script src="assets/js/main.js"></script>
+
+	</body>
+</html>
+
+
+
+		<!-- Two -->
+		<!-- <section id="two" class="main style2">
+			<div class="container">
+				<div class="row gtr-150">
+					<div class="col-6 col-12-medium">
+						<ul class="major-icons">
+							<li><span class="icon solid style1 major fa-code"></span></li>
+							<li><span class="icon solid style2 major fa-bolt"></span></li>
+							<li><span class="icon solid style3 major fa-camera-retro"></span></li>
+							<li><span class="icon solid style4 major fa-cog"></span></li>
+							<li><span class="icon solid style5 major fa-desktop"></span></li>
+							<li><span class="icon solid style6 major fa-calendar"></span></li>
+						</ul>
+					</div>
+					<div class="col-6 col-12-medium">
+						<header class="major">
+							<h2>Lorem ipsum dolor adipiscing<br />
+							amet dolor consequat</h2>
+						</header>
+						<p>Adipiscing a commodo ante nunc accumsan interdum mi ante adipiscing. A nunc lobortis non nisl amet vis volutpat aclacus nascetur ac non. Lorem curae eu ante amet sapien in tempus ac. Adipiscing id accumsan adipiscing ipsum.</p>
+						<p>Blandit faucibus proin. Ac aliquam integer adipiscing enim non praesent vis commodo nunc phasellus cubilia ac risus accumsan. Accumsan blandit. Lobortis phasellus non lobortis dit varius mi varius accumsan lobortis. Blandit ante aliquam lacinia lorem lobortis semper morbi col faucibus vitae integer placerat accumsan orci eu mi odio tempus adipiscing adipiscing adipiscing curae consequat feugiat etiam dolore.</p>
+						<p>Adipiscing a commodo ante nunc accumsan interdum mi ante adipiscing. A nunc lobortis non nisl amet vis volutpat aclacus nascetur ac non. Lorem curae eu ante amet sapien in tempus ac. Adipiscing id accumsan adipiscing ipsum.</p>
+					</div>
+				</div>
+			</div>
+		</section> -->
+
+		
+
+		<!-- Four -->
+		<!-- <section id="four" class="main style2 special">
+			<div class="container">
+				<header class="major">
+					<h2>Ipsum feugiat consequat?</h2>
+				</header>
+				<p>Sed lacus nascetur ac ante amet sapien.</p>
+				<ul class="actions special">
+					<li><a href="#" class="button wide primary">Sign Up</a></li>
+					<li><a href="#" class="button wide">Learn More</a></li>
+				</ul>
+			</div>
+		</section> -->
