@@ -369,19 +369,197 @@
 			<section id="Seven" class="main style1 special">
 				<div class="container">
 					<header class="major">
-						<h2>Reflection + Acknowledgements</h2>
+						<h2>4B Part 1: Detecting Corner Features In an Image</h2>
+						<p>a prelude to feature descriptors</p>
 					</header>
-					<header class="major">
-						<h3>Reflection</h3>
-					</header>
-					<p>My key takeaway is that I should not be moving as much when taking the pictures for the mosaics. When I moved my phone too much, we can get nonoverlapping regions in the rest of the image, like the Sproul Hall mosaic as stated above. I really had to pivot my phone rather than my body to get the results I wanted. Otherwise, it was pretty cool to be making our own mosaics/panoramas from scratch with just linear algebra. One final remark is that Apple's camera color accuracy isn't entirely consistent. We can see this happening with the Sproul Hall mosaic, where there are color differences in the same location across the left and right photos -- despite me more or less taking the photos back to back.</p>
-					<hr/>
-					<header class="major">
-						<h3>Acknowledgements</h3>
-					</header>
-					<p>This project is part of the Fall 2024 offering of CS180: Intro to Computer Vision and Computational Photography, at UC Berkeley. This website template is modified from HTML5 UP, and the images are from myself and Rohan Gulati.</p>
+					<p>For project 4B, I used a subset of the images I used in project 4A. For the mosaic that used only two images, I used the same two images; for the mosaic that used three images, I chose two of the three images. That way, all of the mosaics that we create in project 4B consist of a left and right image.</p>
+					<p>In Part 1, we run corner detection using a Harris Interest Point Detector. Then, once we have all of the photos, we follow the methodologies outlined in the paper, <a href="https://inst.eecs.berkeley.edu/~cs180/fa24/hw/proj4/Papers/MOPS.pdf">“Multi-Image Matching using Multi-Scale Oriented Patches” by Brown et al</a>. Down below, we show the original image, all corners from Harris, and selected corners from ANMS:</p>
+					<div class="row gtr-150">
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/bc_m.jpg" alt="" /></span>
+							<h3>Berkeley Central, Left</h3>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/bc_l_harris.jpg" alt="" /></span>
+							<h3>All points</h3>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/bc_l_anms.jpg" alt="" /></span>
+							<h3>ANMS points</h3>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/bc_r.jpg" alt="" /></span>
+							<h3>Berkeley Central, right</h3>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/bc_r_harris.jpg" alt="" /></span>
+							<h3>All points</h3>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/bc_r_anms.jpg" alt="" /></span>
+							<h3>ANMS points</h3>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/sproul_l.jpg" alt="" /></span>
+							<h3>Sproul Hall, Left</h3>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/sproul_l_harris.jpg" alt="" /></span>
+							<h3>All points</h3>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/sproul_l_anms.jpg" alt="" /></span>
+							<h3>ANMS points</h3>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/sproul_r.jpg" alt="" /></span>
+							<h3>Sproul Hall, right</h3>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/sproul_r_harris.jpg" alt="" /></span>
+							<h3>All points</h3>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/sproul_r_anms.jpg" alt="" /></span>
+							<h3>ANMS points</h3>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/std_m.jpg" alt="" /></span>
+							<h3>The Standard, Left</h3>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/std_l_harris.jpg" alt="" /></span>
+							<h3>All points</h3>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/std_l_anms.jpg" alt="" /></span>
+							<h3>ANMS points</h3>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/std_r.jpg" alt="" /></span>
+							<h3>The Standard, right</h3>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/std_r_harris.jpg" alt="" /></span>
+							<h3>All points</h3>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/std_r_anms.jpg" alt="" /></span>
+							<h3>ANMS points</h3>
+						</div>
+					</div>
+					<p>As we can see, the Harris corner detection algorithm returns a large amount of points. To mediate this, we run these set of points through Adaptive Non-Maximal Suppression (ANMS). ANMS returns the most prominent/important set of points, which we will next use for feature matching and RANSAC.</p>
 				</div>
 			</section>
+		</section>
+		
+		<!-- Eight -->
+		<hr/>
+			<section id="Eight" class="main style1 special">
+				<div class="container">
+					<header class="major">
+						<h2>4B Part 2: Extracting a Feature Descriptor for Each Feature Point</h2>
+						<p>a prelude to feature matching</p>
+					</header>
+					<p>In this section, we implement extracting features given the set of interest points from the previous section, found via ANMS. To accomplish this, we create a <code>40x40</code> region around each point. Then, we resize this region to an <code>8x8</code> region using <code>skimage.transform.resize</code>. From there, we normalize the region by making it zero-mean and unit variance. Then, we flatten the descriptor so that it becomes a <code>1x192</code> horizontal vector, from which we stack together to create an <code>Nx192</code> matrix of descriptors; <code>N</code> is the number of points returned by ANMS.</p>
+				</div>
+			</section>
+		</section>
+	
+	<!-- Eight -->
+	<hr/>
+		<section id="Eight" class="main style1 special">
+			<div class="container">
+				<header class="major">
+					<h2>4B Part 3: Matching Feature Descriptors Between Two Images</h2>
+					<p>a prelude to RANSAC</p>
+				</header>
+				<p>In this section, we implement matching the feature descriptors between two images so that we can create a final subset of points and run RANSAC on them. I implemented feature matching by first computing <code>features1</code> and <code>features2</code>, which correspond to the feature descriptors for the left and right images. From there, we calculate the pairwise squared sum differences, compute Lowe's ratio via 1-NN and 2-NN distances, and finally threshold and keep values lower than <code>lowe_threshold</code>. From there, we get the index of the nearest neighbor for each point and return the corresponding matches, providing robust feature correspondences across the two images.</p>
+			</div>
+		</section>
+	</section>
+	
+	<!-- Nine -->
+	<hr/>
+		<section id="Nine" class="main style1 special">
+			<div class="container">
+				<header class="major">
+					<h2>4B Part 4: RANSAC to Compute a Homography</h2>
+					<p>the grand finale prior to automatically creating mosaics</p>
+				</header>
+				<p>In this section, we implement RANSAC, a robust method to compute homographies. The feature matching algorithm is a good start to get a set of candidate points that we can use to compute the homography. However, we need to be able to filter out outliers and only use the best points to compute the homography. RANSAC is a good method to do this. We randomly sample 4 points from the set of matches, compute the homography, and then check how many inliers we have. We repeat this process for a certain number of iterations and keep the homography with the most inliers. This is a robust method to compute the homography and filter out outliers. Down below, we show the feature matched points and the RANSAC points.</p>
+				<div class="row gtr-150">
+					<div class="col-3 col-12-medium">
+						<span class="image fit"><img src="images/bc_l_features.jpg" alt="" /></span>
+						<h3>BC L Features</h3>
+					</div>
+					<div class="col-3 col-12-medium">
+						<span class="image fit"><img src="images/bc_l_ransac.jpg" alt="" /></span>
+						<h3>BC L RANSAC</h3>
+					</div>
+					<div class="col-3 col-12-medium">
+						<span class="image fit"><img src="images/bc_r_ransac.jpg" alt="" /></span>
+						<h3>BC R RANSAC</h3>
+					</div>
+					<div class="col-3 col-12-medium">
+						<span class="image fit"><img src="images/bc_r_features.jpg" alt="" /></span>
+						<h3>BC R Features</h3>
+					</div>
+					<div class="col-3 col-12-medium">
+						<span class="image fit"><img src="images/sproul_l_features.jpg" alt="" /></span>
+						<h3>Sproul L Features</h3>
+					</div>
+					<div class="col-3 col-12-medium">
+						<span class="image fit"><img src="images/sproul_l_ransac.jpg" alt="" /></span>
+						<h3>Sproul L RANSAC</h3>
+					</div>
+					<div class="col-3 col-12-medium">
+						<span class="image fit"><img src="images/sproul_r_ransac.jpg" alt="" /></span>
+						<h3>Sproul R RANSAC</h3>
+					</div>
+					<div class="col-3 col-12-medium">
+						<span class="image fit"><img src="images/sproul_r_features.jpg" alt="" /></span>
+						<h3>Sproul R Features</h3>
+					</div>
+					<div class="col-3 col-12-medium">
+						<span class="image fit"><img src="images/std_l_features.jpg" alt="" /></span>
+						<h3>Standard L Features</h3>
+					</div>
+					<div class="col-3 col-12-medium">
+						<span class="image fit"><img src="images/std_l_ransac.jpg" alt="" /></span>
+						<h3>Standard L RANSAC</h3>
+					</div>
+					<div class="col-3 col-12-medium">
+						<span class="image fit"><img src="images/std_r_ransac.jpg" alt="" /></span>
+						<h3>Standard R RANSAC</h3>
+					</div>
+					<div class="col-3 col-12-medium">
+						<span class="image fit"><img src="images/std_r_features.jpg" alt="" /></span>
+						<h3>Standard R Features</h3>
+					</div>
+				</div>
+			</div>
+		</section>
+	</section>
+
+	<!-- TBD -->
+	<hr/>
+		<section id="TBD" class="main style1 special">
+			<div class="container">
+				<header class="major">
+					<h2>Reflection + Acknowledgements</h2>
+				</header>
+				<header class="major">
+					<h3>Reflection</h3>
+				</header>
+				<p>My key takeaway is that I should not be moving as much when taking the pictures for the mosaics. When I moved my phone too much, we can get nonoverlapping regions in the rest of the image, like the Sproul Hall mosaic as stated above. I really had to pivot my phone rather than my body to get the results I wanted. Otherwise, it was pretty cool to be making our own mosaics/panoramas from scratch with just linear algebra. One final remark is that Apple's camera color accuracy isn't entirely consistent. We can see this happening with the Sproul Hall mosaic, where there are color differences in the same location across the left and right photos -- despite me more or less taking the photos back to back.</p>
+				<hr/>
+				<header class="major">
+					<h3>Acknowledgements</h3>
+				</header>
+				<p>This project is part of the Fall 2024 offering of CS180: Intro to Computer Vision and Computational Photography, at UC Berkeley. This website template is modified from HTML5 UP, and the images are from myself and Rohan Gulati.</p>
+			</div>
+		</section>
 			
 			
 
