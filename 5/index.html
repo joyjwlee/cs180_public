@@ -1,0 +1,1196 @@
+<!DOCTYPE HTML>
+<!--
+	Photon by HTML5 UP
+	html5up.net | @ajlkn
+	Free for personal and commercial use under the CCA 3.0 license (html5up.net/license)
+-->
+<html>
+	<head>
+		<title>Project 5: Fun With Diffusion Models</title>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+		<link rel="stylesheet" href="assets/css/main.css" />
+		<noscript><link rel="stylesheet" href="assets/css/noscript.css" /></noscript>
+	</head>
+	<body class="is-preload">
+
+		<!-- Header -->
+			<section id="header">
+				<div class="inner">
+					<span class="icon solid major fa-cloud"></span>
+					<h1><strong></strong>Project 5: Fun With Diffusion Models</strong></h1>
+					<h2>Jaewon Lee (SID: 3036696329)</h2>
+					<ul class="actions special">
+						<li><a href="#one" class="button scrolly">Let's go!</a></li>
+					</ul>
+				</div>
+			</section>
+
+		<!-- One -->
+			<section id="one" class="main style1">
+				<div class="container">
+					<div class="row gtr-150">
+						<div class="col-6 col-12-medium">
+							<header class="major">
+								<h2>Overview</h2>
+							</header>
+							<p>This project is split into two parts: 5A (The Power of Diffusion Models) and 5B (Diffusion Models from Scratch).</p>
+							<p><b>In project 5A, I have done the following:</b></p>
+							<ol start="0">
+								<li>Setup</li>
+								<li>Implementing the Forward Process</li>
+								<li>Classical Denoising</li>
+								<li>One-Step Denoising</li>
+								<li>Iterative Denoising</li>
+								<li>Diffusion Model Sampling</li>
+								<li>Classifier-Free Guidance (CFG)</li>
+								<li>Image-to-image Translation</li>
+									<ol>
+										<li>Editing Hand-Drawn and Web Images</li>
+										<li>Inpainting</li>
+										<li>Text-Conditional Image-to-image Translation</li>
+									</ol>
+								<li>Visual Anagrams</li>
+								<li>Hybrid Images</li>
+							</ol>
+							<p><b>In project 5B, I have done the following:</b></p>
+							<ol>
+								<li>Training a Single-Step Denoising UNet</li>
+									<ol>
+										<li>Implementing the UNet</li>
+										<li>Using the UNet to Train a Denoiser</li>
+									</ol>
+								<li>Training a Diffusion Model</li>
+									<ol>
+										<li>Adding Time Conditioning to UNet</li>
+										<li>Training the UNet</li>
+										<li>Sampling from the UNet</li>
+										<li>Adding Class-Conditioning to and Training the UNet</li>
+										<li>Sampling from the Class-Conditioned UNet</li>
+									</ol>
+							</ol>
+						</div>
+						<div class="col-6 col-12-medium imp-medium">
+							<span class="image fit"><img src="images/A_1_8_orig_1.png" alt="" /></span>
+							<p>Above: "an oil painting of an old man" </br> Below: "an oil painting of people around a campfire"</p>
+							<span class="image fit"><img src="images/A_1_8_orig_2.png" alt="" /></span>
+							<p>This is an example of a visual anagram!</p>
+						</div>
+					</div>
+				</div>
+			</section>
+
+		<!-- Two -->
+		<hr/>
+			<section id="Two" class="main style1 special">
+				<div class="container">
+					<header class="major">
+						<h2>5A Part 0: Setup</h2>
+						<p>getting things ready to go</p>
+					</header>
+					<p>In this section, I created my Hugging Face Hub access token, instantiate the DeepFloyd IF diffusion model, and used the precomputed text embeddings to generate our first images. I set my seed to <code>180</code>, which was done by calling <code>torch.cuda.manual_seed(seed)</code> and <code>torch.manual_seed(seed)</code>.</p>
+					<p>The prompts used to generate the images are <code>['an oil painting of a snowy mountain village', 'a man wearing a hat', 'a rocket ship']</code> (from left to right), and the corresponding images with <code>num_inference_steps</code> set to <code>20</code> and <code>40</code> are shown below (left and right halves). The first row and second row correspond to images generated from DeepFloyd's <code>stage_1</code> and <code>stage_2</code> objects, respectively.</p>
+					<!-- 1_0_<num_img>_<stage>_<num_inference_steps> -->
+					<div class="row gtr-150">
+						<div class="col-2 col-12-medium">
+							<span class="image fit"><img src="images/1_0_1_1_20.png" alt="" /></span>
+							<h5>snowy village, stage 1, 20 steps</h5>
+						</div>
+						<div class="col-2 col-12-medium">
+							<span class="image fit"><img src="images/1_0_2_1_20.png" alt="" /></span>
+							<h5>man wearing hat, stage 1, 20 steps</h5>
+						</div>
+						<div class="col-2 col-12-medium">
+							<span class="image fit"><img src="images/1_0_3_1_20.png" alt="" /></span>
+							<h5>rocket ship, stage 1, 20 steps</h5>
+						</div>
+						<div class="col-2 col-12-medium">
+							<span class="image fit"><img src="images/1_0_1_1_40.png" alt="" /></span>
+							<h5>snowy village, stage 1, 40 steps</h5>
+						</div>
+						<div class="col-2 col-12-medium">
+							<span class="image fit"><img src="images/1_0_2_1_40.png" alt="" /></span>
+							<h5>man wearing hat, stage 1, 40 steps</h5>
+						</div>
+						<div class="col-2 col-12-medium">
+							<span class="image fit"><img src="images/1_0_3_1_40.png" alt="" /></span>
+							<h5>rocket ship, stage 1, 40 steps</h5>
+						</div>
+						<div class="col-2 col-12-medium">
+							<span class="image fit"><img src="images/1_0_1_2_20.png" alt="" /></span>
+							<h5>snowy village, stage 2, 20 steps</h5>
+						</div>
+						<div class="col-2 col-12-medium">
+							<span class="image fit"><img src="images/1_0_2_2_20.png" alt="" /></span>
+							<h5>man wearing hat, stage 2, 20 steps</h5>
+						</div>
+						<div class="col-2 col-12-medium">
+							<span class="image fit"><img src="images/1_0_3_2_20.png" alt="" /></span>
+							<h5>rocket ship, stage 2, 20 steps</h5>
+						</div>
+						<div class="col-2 col-12-medium">
+							<span class="image fit"><img src="images/1_0_1_2_40.png" alt="" /></span>
+							<h5>snowy village, stage 2, 40 steps</h5>
+						</div>
+						<div class="col-2 col-12-medium">
+							<span class="image fit"><img src="images/1_0_2_2_40.png" alt="" /></span>
+							<h5>man wearing hat, stage 2, 40 steps</h5>
+						</div>
+						<div class="col-2 col-12-medium">
+							<span class="image fit"><img src="images/1_0_3_2_40.png" alt="" /></span>
+							<h5>rocket ship, stage 2, 40 steps</h5>
+						</div>
+					</div>
+					<p>The images generated with a higer number of inference steps tended to show more detailed results, as we can see from left and right halves of the grid of images above. For the entirety of this project, I used a random seed of 180.</p>
+				</div>
+			</section>
+
+		<!-- Three -->
+		<hr/>
+			<section id="Three" class="main style1 special">
+				<div class="container">
+					<header class="major">
+						<h2>5A Part 1: Sampling Loops</h2>
+						<p>Writing sampling loops for the pretrained DeepFloyd denoisers</p>
+					</header>
+					<h3>1.1 Implementing the Forward Process</h3>
+					<p>In this part, we implement the <code>noisy_im = forward(im, t)</code> function. Down below, I have the test image at noise levels <code>[250, 500, 750]</code>.</p>
+					<div class="row gtr-150">
+						<div class="col-3 col-12-medium">
+							<span class="image fit"><img src="images/A_1_1_campanile.png" alt="" /></span>
+							<p>Berkeley Campanile</p>
+						</div>
+						<div class="col-3 col-12-medium">
+							<span class="image fit"><img src="images/A_1_1_250.png" alt="" /></span>
+							<p>Noisy Campanile at <code>t=250</code></p>
+						</div>
+						<div class="col-3 col-12-medium">
+							<span class="image fit"><img src="images/A_1_1_500.png" alt="" /></span>
+							<p>Noisy Campanile at <code>t=500</code></p>
+						</div>
+						<div class="col-3 col-12-medium">
+							<span class="image fit"><img src="images/A_1_1_750.png" alt="" /></span>
+							<p>Noisy Campanile at <code>t=750</code></p>
+						</div>
+					</div>
+					<h3>1.2 Classical Denoising</h3>
+					<p>We now try to denoise these images using classical methods. Down below are the noisy images from above with Gaussian blur filtering.</p>
+					<div class="row gtr-150">
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/A_1_2_250.png" alt="" /></span>
+							<p>Gaussian Blur Denoising at <code>t=250</code></p>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/A_1_2_500.png" alt="" /></span>
+							<p>Gaussian Blur Denoising at <code>t=500</code></p>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/A_1_2_750.png" alt="" /></span>
+							<p>Gaussian Blur Denoising at <code>t=750</code></p>
+						</div>
+					</div>
+					<h3>1.3 One-Step Denoising</h3>
+					<p>This time, we use the pretrained diffusion model to denoise. This diffusion model was trained with text conditioning, so we use the prompt "a high quality photo."</p>
+					<div class="row gtr-150">
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/A_1_3_250_noisy.png" alt="" /></span>
+							<p>Noisy Campanile at <code>t=250</code></p>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/A_1_3_500_noisy.png" alt="" /></span>
+							<p>Noisy Campanile at <code>t=500</code></p>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/A_1_3_750_noisy.png" alt="" /></span>
+							<p>Noisy Campanile at <code>t=750</code></p>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/A_1_3_250_onestep.png" alt="" /></span>
+							<p>One-Step Denoised Campanile at <code>t=250</code></p>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/A_1_3_500_onestep.png" alt="" /></span>
+							<p>One-Step Denoised Campanile at <code>t=500</code></p>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/A_1_3_750_onestep.png" alt="" /></span>
+							<p>One-Step Denoised Campanile at <code>t=750</code></p>
+						</div>
+					</div>
+					<h3>1.4 Iterative Denoising</h3>
+					<p>The denoising UNet worked much better, but we can still improve via iterative denoising. Down below are the noisy image every 5th loop of denoising in the <code>iterative_denoise</code> function, the final predicted clean image, the predicted clean image using only a single denoising step, and the predicted clean image using gaussian blurring.</p>
+					<div class="row gtr-150">
+						<div class="col-13 col-12-medium">
+							<span class="image fit"><img src="images/A_1_4_noisy_90.png" alt="" /></span>
+							<p>Noisy Campanile at <code>t=90</code></p>
+						</div>
+						<div class="col-13 col-12-medium">
+							<span class="image fit"><img src="images/A_1_4_noisy_240.png" alt="" /></span>
+							<p>Noisy Campanile at <code>t=240</code></p>
+						</div>
+						<div class="col-13 col-12-medium">
+							<span class="image fit"><img src="images/A_1_4_noisy_390.png" alt="" /></span>
+							<p>Noisy Campanile at <code>t=390</code></p>
+						</div>
+						<div class="col-13 col-12-medium">
+							<span class="image fit"><img src="images/A_1_4_noisy_540.png" alt="" /></span>
+							<p>Noisy Campanile at <code>t=540</code></p>
+						</div>
+						<div class="col-13 col-12-medium">
+							<span class="image fit"><img src="images/A_1_4_noisy_690.png" alt="" /></span>
+							<p>Noisy Campanile at <code>t=690</code></p>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/A_1_4_iterative.png" alt="" /></span>
+							<p>Iteratively Denoised Campanile</code></p>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/A_1_4_onestep.png" alt="" /></span>
+							<p>One-Step Denoised Campanile</code></p>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/A_1_4_gaussian.png" alt="" /></span>
+							<p>Gaussian Blurred Campanile</p>
+						</div>
+					</div>
+					<h3>1.5 Diffusion Model Sampling</h3>
+					<p>This time, we use the <code>iterative_denoise</code> function and pass in random noise. Here are 5 results.</p>
+					<div class="row gtr-150">
+						<div class="col-13 col-12-medium">
+							<span class="image fit"><img src="images/A_1_5_1.png" alt="" /></span>
+							<p>Sample 1</p>
+						</div>
+						<div class="col-13 col-12-medium">
+							<span class="image fit"><img src="images/A_1_5_2.png" alt="" /></span>
+							<p>Sample 2</p>
+						</div>
+						<div class="col-13 col-12-medium">
+							<span class="image fit"><img src="images/A_1_5_3.png" alt="" /></span>
+							<p>Sample 3</p>
+						</div>
+						<div class="col-13 col-12-medium">
+							<span class="image fit"><img src="images/A_1_5_4.png" alt="" /></span>
+							<p>Sample 4</p>
+						</div>
+						<div class="col-13 col-12-medium">
+							<span class="image fit"><img src="images/A_1_5_5.png" alt="" /></span>
+							<p>Sample 5</p>
+						</div>
+					</div>
+					<h3>1.6 Classifier-Free Guidance (CFG)</h3>
+					<p>In order to improve on image generation, we incorporate CFG, which is implemented in the <code>iterative_denoise_cfg</code> function. Here are another 5 samples using the prompt "a high quality photo" with a CFG scale of <code>gamma=7</code>.</p>
+					<div class="row gtr-150">
+						<div class="col-13 col-12-medium">
+							<span class="image fit"><img src="images/A_1_6_1.png" alt="" /></span>
+							<p>Sample 1</p>
+						</div>
+						<div class="col-13 col-12-medium">
+							<span class="image fit"><img src="images/A_1_6_2.png" alt="" /></span>
+							<p>Sample 2</p>
+						</div>
+						<div class="col-13 col-12-medium">
+							<span class="image fit"><img src="images/A_1_6_3.png" alt="" /></span>
+							<p>Sample 3</p>
+						</div>
+						<div class="col-13 col-12-medium">
+							<span class="image fit"><img src="images/A_1_6_4.png" alt="" /></span>
+							<p>Sample 4</p>
+						</div>
+						<div class="col-13 col-12-medium">
+							<span class="image fit"><img src="images/A_1_6_5.png" alt="" /></span>
+							<p>Sample 5</p>
+						</div>
+					</div>
+					<h3>1.7 Image-to-image Translation</h3>
+					<p>In this part, we add variuos amounts of noise to our input image and pass it into <code>iterative_denoise_cfg</code>. Adding more noise causes the model to "hallucinate" new things, forcing it to be "creative" -- one way to think about it is that the denoising process "forces" a noisy image back onto the manifold of natural images.</p>
+					<div class="row gtr-150">
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_test_1.png" alt="" /></span>
+							<p>SDEdit with <code>i_start=1</code></p>
+						</div>
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_test_3.png" alt="" /></span>
+							<p>SDEdit with <code>i_start=3</code></p>
+						</div>
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_test_5.png" alt="" /></span>
+							<p>SDEdit with <code>i_start=5</code></p>
+						</div>
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_test_7.png" alt="" /></span>
+							<p>SDEdit with <code>i_start=7</code></p>
+						</div>
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_test_10.png" alt="" /></span>
+							<p>SDEdit with <code>i_start=10</code></p>
+						</div>
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_test_20.png" alt="" /></span>
+							<p>SDEdit with <code>i_start=20</code></p>
+						</div>
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_1_campanile.png" alt="" /></span>
+							<p>Campanile</code></p>
+						</div>
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_im1_1.png" alt="" /></span>
+							<p>SDEdit with <code>i_start=1</code></p>
+						</div>
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_im1_3.png" alt="" /></span>
+							<p>SDEdit with <code>i_start=3</code></p>
+						</div>
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_im1_5.png" alt="" /></span>
+							<p>SDEdit with <code>i_start=5</code></p>
+						</div>
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_im1_7.png" alt="" /></span>
+							<p>SDEdit with <code>i_start=7</code></p>
+						</div>
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_im1_10.png" alt="" /></span>
+							<p>SDEdit with <code>i_start=10</code></p>
+						</div>
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_im1_20.png" alt="" /></span>
+							<p>SDEdit with <code>i_start=20</code></p>
+						</div>
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_im1_orig.png" alt="" /></span>
+							<p>Tiramisu/Cake</code></p>
+						</div>
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_im2_1.png" alt="" /></span>
+							<p>SDEdit with <code>i_start=1</code></p>
+						</div>
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_im2_3.png" alt="" /></span>
+							<p>SDEdit with <code>i_start=3</code></p>
+						</div>
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_im2_5.png" alt="" /></span>
+							<p>SDEdit with <code>i_start=5</code></p>
+						</div>
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_im2_7.png" alt="" /></span>
+							<p>SDEdit with <code>i_start=7</code></p>
+						</div>
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_im2_10.png" alt="" /></span>
+							<p>SDEdit with <code>i_start=10</code></p>
+						</div>
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_im2_20.png" alt="" /></span>
+							<p>SDEdit with <code>i_start=20</code></p>
+						</div>
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_im2_orig.jpg" alt="" /></span>
+							<p>Golden Gate Bridge</code></p>
+						</div>
+					</div>
+					<h3>1.7.1 Editing Hand-Drawn and Web Images</h3>
+					<p>We now try the same with nonrealistic image. I have chosen a cartoon drawing of a table and have also drawn three images myself.</p>
+					<div class="row gtr-150">
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_1_web_1.png" alt="" /></span>
+							<p>Table at <code>i_start=1</code></p>
+						</div>
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_1_web_3.png" alt="" /></span>
+							<p>Table at <code>i_start=3</code></p>
+						</div>
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_1_web_5.png" alt="" /></span>
+							<p>Table at <code>i_start=5</code></p>
+						</div>
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_1_web_7.png" alt="" /></span>
+							<p>Table at <code>i_start=7</code></p>
+						</div>
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_1_web_10.png" alt="" /></span>
+							<p>Table at <code>i_start=10</code></p>
+						</div>
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_1_web_20.png" alt="" /></span>
+							<p>Table at <code>i_start=20</code></p>
+						</div>
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_1_web_orig.png" alt="" /></span>
+							<p>Table Clipart</code></p>
+						</div>
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_1_hand1_1.png" alt="" /></span>
+							<p>Star and Moon at <code>i_start=1</code></p>
+						</div>
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_1_hand1_3.png" alt="" /></span>
+							<p>Star and Moon at <code>i_start=3</code></p>
+						</div>
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_1_hand1_5.png" alt="" /></span>
+							<p>Star and Moon at <code>i_start=5</code></p>
+						</div>
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_1_hand1_7.png" alt="" /></span>
+							<p>Star and Moon at <code>i_start=7</code></p>
+						</div>
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_1_hand1_10.png" alt="" /></span>
+							<p>Star and Moon at <code>i_start=10</code></p>
+						</div>
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_1_hand1_20.png" alt="" /></span>
+							<p>Star and Moon at <code>i_start=20</code></p>
+						</div>
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_1_hand1_orig.png" alt="" /></span>
+							<p>Star and Moon</code></p>
+						</div>
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_1_hand2_1.png" alt="" /></span>
+							<p>Car at <code>i_start=1</code></p>
+						</div>
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_1_hand2_3.png" alt="" /></span>
+							<p>Car at <code>i_start=3</code></p>
+						</div>
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_1_hand2_5.png" alt="" /></span>
+							<p>Car at <code>i_start=5</code></p>
+						</div>
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_1_hand2_7.png" alt="" /></span>
+							<p>Car at <code>i_start=7</code></p>
+						</div>
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_1_hand2_10.png" alt="" /></span>
+							<p>Car at <code>i_start=10</code></p>
+						</div>
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_1_hand2_20.png" alt="" /></span>
+							<p>Car at <code>i_start=20</code></p>
+						</div>
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_1_hand2_orig.png" alt="" /></span>
+							<p>Car</code></p>
+						</div>
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_1_hand3_1.png" alt="" /></span>
+							<p>Flower at <code>i_start=1</code></p>
+						</div>
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_1_hand3_3.png" alt="" /></span>
+							<p>Flower at <code>i_start=3</code></p>
+						</div>
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_1_hand3_5.png" alt="" /></span>
+							<p>Flower at <code>i_start=5</code></p>
+						</div>
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_1_hand3_7.png" alt="" /></span>
+							<p>Flower at <code>i_start=7</code></p>
+						</div>
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_1_hand3_10.png" alt="" /></span>
+							<p>Flower at <code>i_start=10</code></p>
+						</div>
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_1_hand3_20.png" alt="" /></span>
+							<p>Flower at <code>i_start=20</code></p>
+						</div>
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_1_hand3_orig.png" alt="" /></span>
+							<p>Flower in a pot</p>
+						</div>
+					</div>
+					<h3>1.7.2 Inpainting</h3>
+					<p>This time, we do inpainting with a mask. We create a new image that has the same content where <code>m=0</code> and new content wherever <code>m=1</code>. It is pretty cool how the picture of Campanile became a picture of a person wearing a Campanile-dress. Otherwise, the inpainting worked out very nicely for the deer and the sunset.</p>
+					<div class="row gtr-150">
+						<div class="col-3 col-12-medium">
+							<span class="image fit"><img src="images/A_1_1_campanile.png" alt="" /></span>
+							<p>Campanile</p>
+						</div>
+						<div class="col-3 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_2_test_mask.jpg" alt="" /></span>
+							<p>Mask</p>
+						</div>
+						<div class="col-3 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_2_test_replace.jpg" alt="" /></span>
+							<p>Hole to Fill</p>
+						</div>
+						<div class="col-3 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_2_test_inpaint.jpg" alt="" /></span>
+							<p>Campanile Inpainted</p>
+						</div>
+						<div class="col-3 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_2_im1_orig.jpg" alt="" /></span>
+							<p>Deer</p>
+						</div>
+						<div class="col-3 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_2_im1_mask.jpg" alt="" /></span>
+							<p>Mask</p>
+						</div>
+						<div class="col-3 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_2_im1_replace.jpg" alt="" /></span>
+							<p>Hole to Fill</p>
+						</div>
+						<div class="col-3 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_2_im1_inpaint.jpg" alt="" /></span>
+							<p>Deer Inpainted</p>
+						</div>
+						<div class="col-3 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_2_im2_orig.jpg" alt="" /></span>
+							<p>Sunset</p>
+						</div>
+						<div class="col-3 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_2_im2_mask.jpg" alt="" /></span>
+							<p>Mask</p>
+						</div>
+						<div class="col-3 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_2_im2_replace.jpg" alt="" /></span>
+							<p>Hole to Fill</p>
+						</div>
+						<div class="col-3 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_2_im2_inpaint.jpg" alt="" /></span>
+							<p>Sunset Inpainted</p>
+						</div>
+					</div>
+					<h3>1.7.3 Text-Conditional Image-to-image Translation</h3>
+					<p>This time, we guide the projection with a text prompt. Down below, I have a picture of the Campanile morphing to a rocket, a cat morphing to a dog, and a donut morphing to a painting of people sitting around a campfire.</p>
+					<div class="row gtr-150">
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_3_test_1.png" alt="" /></span>
+							<p>Rocket Ship at <code>i_start=1</code></p>
+						</div>
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_3_test_3.png" alt="" /></span>
+							<p>Rocket Ship at <code>i_start=3</code></p>
+						</div>
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_3_test_5.png" alt="" /></span>
+							<p>Rocket Ship at <code>i_start=5</code></p>
+						</div>
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_3_test_7.png" alt="" /></span>
+							<p>Rocket Ship at <code>i_start=7</code></p>
+						</div>
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_3_test_10.png" alt="" /></span>
+							<p>Rocket Ship at <code>i_start=10</code></p>
+						</div>
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_3_test_20.png" alt="" /></span>
+							<p>Rocket Ship at <code>i_start=20</code></p>
+						</div>
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_1_campanile.png" alt="" /></span>
+							<p>Campanile</p>
+						</div>
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_3_im1_1.png" alt="" /></span>
+							<p>Dog at <code>i_start=1</code></p>
+						</div>
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_3_im1_3.png" alt="" /></span>
+							<p>Dog at <code>i_start=3</code></p>
+						</div>
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_3_im1_5.png" alt="" /></span>
+							<p>Dog at <code>i_start=5</code></p>
+						</div>
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_3_im1_7.png" alt="" /></span>
+							<p>Dog at <code>i_start=7</code></p>
+						</div>
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_3_im1_10.png" alt="" /></span>
+							<p>Dog at <code>i_start=10</code></p>
+						</div>
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_3_im1_20.png" alt="" /></span>
+							<p>Dog at <code>i_start=20</code></p>
+						</div>
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_3_im1_orig.jpg" alt="" /></span>
+							<p>Cat</p>
+						</div>
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_3_im2_1.png" alt="" /></span>
+							<p>Campfire at <code>i_start=1</code></p>
+						</div>
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_3_im2_3.png" alt="" /></span>
+							<p>Campfire at <code>i_start=3</code></p>
+						</div>
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_3_im2_5.png" alt="" /></span>
+							<p>Campfire at <code>i_start=5</code></p>
+						</div>
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_3_im2_7.png" alt="" /></span>
+							<p>Campfire at <code>i_start=7</code></p>
+						</div>
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_3_im2_10.png" alt="" /></span>
+							<p>Campfire at <code>i_start=10</code></p>
+						</div>
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_3_im2_20.png" alt="" /></span>
+							<p>Campfire at <code>i_start=20</code></p>
+						</div>
+						<div class="col-14 col-12-medium">
+							<span class="image fit"><img src="images/A_1_7_3_im2_orig.jpg" alt="" /></span>
+							<p>Donut</p>
+						</div>
+					</div>
+					<h3>1.8 Visual Anagrams</h3>
+					<p>Now, we create visual anagrams by obtaining the noise estimate for the upright and upside down images, averaging them, and performing a reverse/denoising diffusion step with the averaged noise estimate. The first anagram is of "an oil painting of an old man" and "an oil painting of people around a campfire", the second anagram is of "a rocket ship" and "a pencil", and the third anagram is of "a photo of the amalfi cost" and "a photo of a dog".</p>
+					<div class="row gtr-150">
+						<div class="col-2 col-12-medium">
+							<span class="image fit"><img src="images/A_1_8_orig_1.png" alt="" /></span>
+							<p>an oil painting of an old man</p>
+						</div>
+						<div class="col-2 col-12-medium">
+							<span class="image fit"><img src="images/A_1_8_orig_2.png" alt="" /></span>
+							<p>an oil painting of people around a campfire</p>
+						</div>
+						<div class="col-2 col-12-medium">
+							<span class="image fit"><img src="images/A_1_8_1_1.png" alt="" /></span>
+							<p>a rocket ship</p>
+						</div>
+						<div class="col-2 col-12-medium">
+							<span class="image fit"><img src="images/A_1_8_1_2.png" alt="" /></span>
+							<p>a pencil</p>
+						</div>
+						<div class="col-2 col-12-medium">
+							<span class="image fit"><img src="images/A_1_8_2_1.png" alt="" /></span>
+							<p>a photo of the amalfi coast</p>
+						</div>
+						<div class="col-2 col-12-medium">
+							<span class="image fit"><img src="images/A_1_8_2_2.png" alt="" /></span>
+							<p>a photo of a dog</p>
+						</div>
+					</div>
+					<h3>1.9 Hybrid Images</h3>
+					<p>This time, we implement Factorized Diffusion and create hybrid images. We create three images down below (the first description is when the image is far away, and the second description is when the image is close up). I tried making many images of the barista and the dog, and one observation that I had was that oftentimes it was either the case that the dog image never really appeared or was incorporated into the barista's apron.</p>
+					<div class="row gtr-150">
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/A_1_9_orig.png" alt="" /></span>
+							<p>Hybrid image of a skull and a waterfall</p>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/A_1_9_im1.png" alt="" /></span>
+							<p>Hybrid image of a rocketship and a snowy village</p>
+						</div>
+						<div class="col-4 col-12-medium">
+							<span class="image fit"><img src="images/A_1_9_im2.png" alt="" /></span>
+							<p>Hybrid image of a barista and dog</p>
+						</div>
+					</div>
+				</div>
+			</section>
+
+		<!-- Four -->
+		<hr/>
+			<section id="Four" class="main style1 special">
+				<div class="container">
+					<header class="major">
+						<h2>5B Part 1: Training a Single-Step Denoising UNet</h2>
+						<p>building our own UNet</p>
+					</header>
+					<h3>1.1 Implementing the UNet</h3>
+					<p>Our unconditional UNet architecture is as follows</p>
+					<div class="row gtr-150">
+						<div class="col-2 col-12-medium"></div>
+						<div class="col-8 col-12-medium">
+							<span class="image fit"><img src="images/unconditional_arch.png" alt="" /></span>
+						</div>
+						<div class="col-2 col-12-medium"></div>
+					</div>
+					<h3>1.2 Using the UNet to Train a Denoiser</h3>
+					<p>Once we are done implementing the UNet, we train it on the MNIST dataset. Down below, we show a visualization of the noising process using <code>sigma = [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]</code>, training loss curve plot every few iterations during the whole training process, sample results on the test set after the first and the fifth epoch, and sample results on the test set with out-of-distribution noise levels after the model is trained.</p>
+					<div class="row gtr-150">
+						<div class="col-6 col-12-medium">
+							<span class="image fit"><img src="images/B_1_1.png" alt="" /></span>
+							<p>visualization of the noising process</p>
+						</div>
+						<div class="col-6 col-12-medium">
+							<span class="image fit"><img src="images/B_1_2.png" alt="" /></span>
+							<p>training loss curve plot</p>
+						</div>
+						<div class="col-6 col-12-medium">
+							<span class="image fit"><img src="images/B_1_3_1.png" alt="" /></span>
+							<p>sample results on the test set after the first epoch</p>
+						</div>
+						<div class="col-6 col-12-medium">
+							<span class="image fit"><img src="images/B_1_3_5.png" alt="" /></span>
+							<p>sample results on the test set after the the fifth epoch</p>
+						</div>
+						<div class="col-12 col-12-medium">
+							<span class="image fit"><img src="images/B_1_4.png" alt="" /></span>
+							<p>sample results on the test set with out-of-distribution noise levels</p>
+						</div>
+					</div>
+					<header class="major">
+						<h2>5B Part 2: Training a Diffusion Model</h2>
+						<p>implementing DDPM</p>
+					</header>
+					<h3>2.1 Adding Time Conditioning to UNet</h3>
+					<p>We now inject a time scalar <code>t</code> into our UNet to condition it. The architecture is as follows.</p>
+					<div class="row gtr-150">
+						<div class="col-2 col-12-medium"></div>
+						<div class="col-8 col-12-medium">
+							<span class="image fit"><img src="images/conditional_arch.png" alt="" /></span>
+						</div>
+						<div class="col-2 col-12-medium"></div>
+					</div>
+					<h3>2.2 Training the UNet and 2.3 Sampling from the UNet</h3>
+					<p>Down below, we have the training loss curve plot for the time-conditioned UNet over the whole training process and sampling results for the time-conditioned UNet for 5 and 20 epochs.</p>
+					<p>I originally had used the same conditioning variable across each batch, rather than having one variable correspond to each datapoint. This caused my training loss curve to look fairly off, which I have also included. Also note that the axis should say 20 epochs, not 5 epochs; this is a typo.</p>
+					<div class="row gtr-150">
+						<div class="col-6 col-12-medium">
+							<span class="image fit"><img src="images/B_2_1_1_old.png" alt="" /></span>
+							<p>incorrect training loss curve</p>
+						</div>
+						<div class="col-6 col-12-medium">
+							<span class="image fit"><img src="images/B_2_1_1.png" alt="" /></span>
+							<p>correct training loss curve</p>
+						</div>
+						<div class="col-6 col-12-medium">
+							<span class="image fit"><img src="images/B_2_1_2_old.png" alt="" /></span>
+							<p>incorrect training loss curve (smoothed)</p>
+						</div>
+						<div class="col-6 col-12-medium">
+							<span class="image fit"><img src="images/B_2_1_2.png" alt="" /></span>
+							<p>correct training loss curve (smoothed)</p>
+						</div>
+						<div class="col-6 col-12-medium">
+							<span class="image fit"><img src="images/B_2_2_5.png" alt="" /></span>
+							<p>sampling results for 5 epochs</p>
+						</div>
+						<div class="col-6 col-12-medium">
+							<span class="image fit"><img src="images/B_2_2_20.png" alt="" /></span>
+							<p>sampling results for 20 epochs</p>
+						</div>
+					</div>
+					<h3>2.4 Adding Class-Conditioning to UNet and 2.5 Sampling from the Class-Conditioned UNet</h3>
+					<p>To make the results better and give us more control for image generation, we can also condition our UNet on the class of the digit 0-9. Down below are the training loss curve plot for the class-conditioned UNet over the whole training process, and sampling results for the class-conditioned UNet for 5 and 20 epochs (4 instances for each digit). Once again, the loss curve has a typo and should say 20 epochs.</p>
+					<div class="row gtr-150">
+						<div class="col-12 col-12-medium">
+							<span class="image fit"><img src="images/B_3_1.png" alt="" /></span>
+							<p>training loss curve</p>
+						</div>
+						<div class="col-6 col-12-medium">
+							<span class="image fit"><img src="images/B_3_2_5.png" alt="" /></span>
+							<p>sampling results for the class-conditioned UNet for 5 epochs</p>
+						</div>
+						<div class="col-6 col-12-medium">
+							<span class="image fit"><img src="images/B_3_2_20.png" alt="" /></span>
+							<p>sampling results for the class-conditioned UNet for 20 epochs</p>
+						</div>
+					</div>
+				</div>
+			</section>
+
+	<!-- TBD -->
+	<hr/>
+		<section id="TBD" class="main style1 special">
+			<div class="container">
+				<header class="major">
+					<h2>Acknowledgements</h2>
+				</header>
+				<p>This project is part of the Fall 2024 offering of CS180: Intro to Computer Vision and Computational Photography, at UC Berkeley. This website template is modified from HTML5 UP.</p>
+			</div>
+		</section>
+			
+			
+
+		<!-- Five -->
+		<!--
+			<section id="five" class="main style1">
+				<div class="container">
+					<header class="major special">
+						<h2>Elements</h2>
+					</header>
+
+					<section>
+						<h4>Text</h4>
+						<p>This is <b>bold</b> and this is <strong>strong</strong>. This is <i>italic</i> and this is <em>emphasized</em>.
+						This is <sup>superscript</sup> text and this is <sub>subscript</sub> text.
+						This is <u>underlined</u> and this is code: <code>for (;;) { ... }</code>. Finally, <a href="#">this is a link</a>.</p>
+						<hr />
+						<header>
+							<h4>Heading with a Subtitle</h4>
+							<p>Lorem ipsum dolor sit amet nullam id egestas urna aliquam</p>
+						</header>
+						<p>Nunc lacinia ante nunc ac lobortis. Interdum adipiscing gravida odio porttitor sem non mi integer non faucibus ornare mi ut ante amet placerat aliquet. Volutpat eu sed ante lacinia sapien lorem accumsan varius montes viverra nibh in adipiscing blandit tempus accumsan.</p>
+						<header>
+							<h5>Heading with a Subtitle</h5>
+							<p>Lorem ipsum dolor sit amet nullam id egestas urna aliquam</p>
+						</header>
+						<p>Nunc lacinia ante nunc ac lobortis. Interdum adipiscing gravida odio porttitor sem non mi integer non faucibus ornare mi ut ante amet placerat aliquet. Volutpat eu sed ante lacinia sapien lorem accumsan varius montes viverra nibh in adipiscing blandit tempus accumsan.</p>
+						<hr />
+						<h2>Heading Level 2</h2>
+						<h3>Heading Level 3</h3>
+						<h4>Heading Level 4</h4>
+						<h5>Heading Level 5</h5>
+						<h6>Heading Level 6</h6>
+						<hr />
+						<h5>Blockquote</h5>
+						<blockquote>Fringilla nisl. Donec accumsan interdum nisi, quis tincidunt felis sagittis eget tempus euismod. Vestibulum ante ipsum primis in faucibus vestibulum. Blandit adipiscing eu felis iaculis volutpat ac adipiscing accumsan faucibus. Vestibulum ante ipsum primis in faucibus lorem ipsum dolor sit amet nullam adipiscing eu felis.</blockquote>
+						<h5>Preformatted</h5>
+						<pre><code>i = 0;
+
+while (!deck.isInOrder()) {
+print 'Iteration ' + i;
+deck.shuffle();
+i++;
+}
+
+print 'It took ' + i + ' iterations to sort the deck.';</code></pre>
+					</section>
+
+					<section>
+						<h4>Lists</h4>
+						<div class="row">
+							<div class="col-6 col-12-medium">
+								<h5>Unordered</h5>
+								<ul>
+									<li>Dolor pulvinar etiam.</li>
+									<li>Sagittis adipiscing.</li>
+									<li>Felis enim feugiat.</li>
+								</ul>
+								<h5>Alternate</h5>
+								<ul class="alt">
+									<li>Dolor pulvinar etiam.</li>
+									<li>Sagittis adipiscing.</li>
+									<li>Felis enim feugiat.</li>
+								</ul>
+							</div>
+							<div class="col-6 col-12-medium">
+								<h5>Ordered</h5>
+								<ol>
+									<li>Dolor pulvinar etiam.</li>
+									<li>Etiam vel felis viverra.</li>
+									<li>Felis enim feugiat.</li>
+									<li>Dolor pulvinar etiam.</li>
+									<li>Etiam vel felis lorem.</li>
+									<li>Felis enim et feugiat.</li>
+								</ol>
+								<h5>Icons</h5>
+								<ul class="icons">
+									<li><a href="#" class="icon brands fa-twitter"><span class="label">Twitter</span></a></li>
+									<li><a href="#" class="icon brands fa-facebook-f"><span class="label">Facebook</span></a></li>
+									<li><a href="#" class="icon brands fa-instagram"><span class="label">Instagram</span></a></li>
+									<li><a href="#" class="icon brands fa-github"><span class="label">Github</span></a></li>
+								</ul>
+							</div>
+						</div>
+						<h5>Actions</h5>
+						<div class="row">
+							<div class="col-6 col-12-medium">
+								<ul class="actions">
+									<li><a href="#" class="button primary">Default</a></li>
+									<li><a href="#" class="button">Default</a></li>
+								</ul>
+								<ul class="actions small">
+									<li><a href="#" class="button primary small">Small</a></li>
+									<li><a href="#" class="button small">Small</a></li>
+								</ul>
+								<ul class="actions stacked">
+									<li><a href="#" class="button primary">Default</a></li>
+									<li><a href="#" class="button">Default</a></li>
+								</ul>
+								<ul class="actions stacked">
+									<li><a href="#" class="button primary small">Small</a></li>
+									<li><a href="#" class="button small">Small</a></li>
+								</ul>
+							</div>
+							<div class="col-6 col-12-medium">
+								<ul class="actions stacked">
+									<li><a href="#" class="button primary fit">Default</a></li>
+									<li><a href="#" class="button fit">Default</a></li>
+								</ul>
+								<ul class="actions stacked">
+									<li><a href="#" class="button primary small fit">Small</a></li>
+									<li><a href="#" class="button small fit">Small</a></li>
+								</ul>
+							</div>
+						</div>
+					</section>
+
+					<section>
+						<h4>Table</h4>
+						<h5>Default</h5>
+						<div class="table-wrapper">
+							<table>
+								<thead>
+									<tr>
+										<th>Name</th>
+										<th>Description</th>
+										<th>Price</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr>
+										<td>Item One</td>
+										<td>Ante turpis integer aliquet porttitor.</td>
+										<td>29.99</td>
+									</tr>
+									<tr>
+										<td>Item Two</td>
+										<td>Vis ac commodo adipiscing arcu aliquet.</td>
+										<td>19.99</td>
+									</tr>
+									<tr>
+										<td>Item Three</td>
+										<td> Morbi faucibus arcu accumsan lorem.</td>
+										<td>29.99</td>
+									</tr>
+									<tr>
+										<td>Item Four</td>
+										<td>Vitae integer tempus condimentum.</td>
+										<td>19.99</td>
+									</tr>
+									<tr>
+										<td>Item Five</td>
+										<td>Ante turpis integer aliquet porttitor.</td>
+										<td>29.99</td>
+									</tr>
+								</tbody>
+								<tfoot>
+									<tr>
+										<td colspan="2"></td>
+										<td>100.00</td>
+									</tr>
+								</tfoot>
+							</table>
+						</div>
+
+						<h5>Alternate</h5>
+						<div class="table-wrapper">
+							<table class="alt">
+								<thead>
+									<tr>
+										<th>Name</th>
+										<th>Description</th>
+										<th>Price</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr>
+										<td>Item One</td>
+										<td>Ante turpis integer aliquet porttitor.</td>
+										<td>29.99</td>
+									</tr>
+									<tr>
+										<td>Item Two</td>
+										<td>Vis ac commodo adipiscing arcu aliquet.</td>
+										<td>19.99</td>
+									</tr>
+									<tr>
+										<td>Item Three</td>
+										<td> Morbi faucibus arcu accumsan lorem.</td>
+										<td>29.99</td>
+									</tr>
+									<tr>
+										<td>Item Four</td>
+										<td>Vitae integer tempus condimentum.</td>
+										<td>19.99</td>
+									</tr>
+									<tr>
+										<td>Item Five</td>
+										<td>Ante turpis integer aliquet porttitor.</td>
+										<td>29.99</td>
+									</tr>
+								</tbody>
+								<tfoot>
+									<tr>
+										<td colspan="2"></td>
+										<td>100.00</td>
+									</tr>
+								</tfoot>
+							</table>
+						</div>
+					</section>
+
+					<section>
+						<h4>Buttons</h4>
+						<ul class="actions">
+							<li><a href="#" class="button primary">Primary</a></li>
+							<li><a href="#" class="button">Default</a></li>
+						</ul>
+						<ul class="actions">
+							<li><a href="#" class="button large">Large</a></li>
+							<li><a href="#" class="button">Default</a></li>
+							<li><a href="#" class="button small">Small</a></li>
+						</ul>
+						<ul class="actions fit">
+							<li><a href="#" class="button fit">Fit</a></li>
+							<li><a href="#" class="button primary fit">Fit</a></li>
+							<li><a href="#" class="button fit">Fit</a></li>
+						</ul>
+						<ul class="actions fit small">
+							<li><a href="#" class="button primary fit small">Fit + Small</a></li>
+							<li><a href="#" class="button fit small">Fit + Small</a></li>
+							<li><a href="#" class="button primary fit small">Fit + Small</a></li>
+						</ul>
+						<ul class="actions">
+							<li><a href="#" class="button primary icon solid fa-download">Icon</a></li>
+							<li><a href="#" class="button icon solid fa-download">Icon</a></li>
+						</ul>
+						<ul class="actions">
+							<li><span class="button primary disabled">Disabled</span></li>
+							<li><span class="button disabled">Disabled</span></li>
+						</ul>
+					</section>
+
+					<section>
+						<h4>Form</h4>
+						<form method="post" action="#">
+							<div class="row gtr-uniform gtr-50">
+								<div class="col-6 col-12-xsmall">
+									<input type="text" name="demo-name" id="demo-name" value="" placeholder="Name" />
+								</div>
+								<div class="col-6 col-12-xsmall">
+									<input type="email" name="demo-email" id="demo-email" value="" placeholder="Email" />
+								</div>
+								<div class="col-12">
+									<select name="demo-category" id="demo-category">
+										<option value="">- Category -</option>
+										<option value="1">Manufacturing</option>
+										<option value="1">Shipping</option>
+										<option value="1">Administration</option>
+										<option value="1">Human Resources</option>
+									</select>
+								</div>
+								<div class="col-4 col-12-small">
+									<input type="radio" id="demo-priority-low" name="demo-priority" checked>
+									<label for="demo-priority-low">Low</label>
+								</div>
+								<div class="col-4 col-12-small">
+									<input type="radio" id="demo-priority-normal" name="demo-priority">
+									<label for="demo-priority-normal">Normal</label>
+								</div>
+								<div class="col-4 col-12-small">
+									<input type="radio" id="demo-priority-high" name="demo-priority">
+									<label for="demo-priority-high">High</label>
+								</div>
+								<div class="col-6 col-12-small">
+									<input type="checkbox" id="demo-copy" name="demo-copy">
+									<label for="demo-copy">Email me a copy</label>
+								</div>
+								<div class="col-6 col-12-small">
+									<input type="checkbox" id="demo-human" name="demo-human" checked>
+									<label for="demo-human">Not a robot</label>
+								</div>
+								<div class="col-12">
+									<textarea name="demo-message" id="demo-message" placeholder="Enter your message" rows="6"></textarea>
+								</div>
+								<div class="col-12">
+									<ul class="actions">
+										<li><input type="submit" value="Send Message" class="primary" /></li>
+										<li><input type="reset" value="Reset" /></li>
+									</ul>
+								</div>
+							</div>
+						</form>
+					</section>
+
+					<section>
+						<h4>Image</h4>
+						<h5>Fit</h5>
+						<div class="box alt">
+							<div class="row gtr-uniform gtr-50">
+								<div class="col-12"><span class="image fit"><img src="images/pic06.jpg" alt="" /></span></div>
+								<div class="col-4"><span class="image fit"><img src="images/pic02.jpg" alt="" /></span></div>
+								<div class="col-4"><span class="image fit"><img src="images/pic03.jpg" alt="" /></span></div>
+								<div class="col-4"><span class="image fit"><img src="images/pic04.jpg" alt="" /></span></div>
+								<div class="col-4"><span class="image fit"><img src="images/pic03.jpg" alt="" /></span></div>
+								<div class="col-4"><span class="image fit"><img src="images/pic04.jpg" alt="" /></span></div>
+								<div class="col-4"><span class="image fit"><img src="images/pic02.jpg" alt="" /></span></div>
+								<div class="col-4"><span class="image fit"><img src="images/pic04.jpg" alt="" /></span></div>
+								<div class="col-4"><span class="image fit"><img src="images/pic02.jpg" alt="" /></span></div>
+								<div class="col-4"><span class="image fit"><img src="images/pic03.jpg" alt="" /></span></div>
+							</div>
+						</div>
+						<h5>Left &amp; Right</h5>
+						<p><span class="image left"><img src="images/pic05.jpg" alt="" /></span>Fringilla nisl. Donec accumsan interdum nisi, quis tincidunt felis sagittis eget. tempus euismod. Vestibulum ante ipsum primis in faucibus vestibulum. Blandit adipiscing eu felis iaculis volutpat ac adipiscing accumsan eu faucibus. Integer ac pellentesque praesent tincidunt felis sagittis eget. tempus euismod. Vestibulum ante ipsum primis in faucibus vestibulum. Blandit adipiscing eu felis iaculis volutpat ac adipiscing accumsan eu faucibus. Integer ac pellentesque praesent. Donec accumsan interdum nisi, quis tincidunt felis sagittis eget. tempus euismod. Vestibulum ante ipsum primis in faucibus vestibulum. Blandit adipiscing eu felis iaculis volutpat ac adipiscing accumsan eu faucibus. Integer ac pellentesque praesent tincidunt felis sagittis eget. tempus euismod. Vestibulum ante ipsum primis in faucibus vestibulum. Blandit adipiscing eu felis iaculis volutpat ac adipiscing accumsan eu faucibus. Integer ac pellentesque praesent. Blandit adipiscing eu felis iaculis volutpat ac adipiscing accumsan eu faucibus. Integer ac pellentesque praesent tincidunt felis sagittis eget. tempus euismod. Vestibulum ante ipsum primis in faucibus vestibulum. Blandit adipiscing eu felis iaculis volutpat ac adipiscing accumsan eu faucibus. Integer ac pellentesque praesent.</p>
+						<p><span class="image right"><img src="images/pic05.jpg" alt="" /></span>Fringilla nisl. Donec accumsan interdum nisi, quis tincidunt felis sagittis eget. tempus euismod. Vestibulum ante ipsum primis in faucibus vestibulum. Blandit adipiscing eu felis iaculis volutpat ac adipiscing accumsan eu faucibus. Integer ac pellentesque praesent tincidunt felis sagittis eget. tempus euismod. Vestibulum ante ipsum primis in faucibus vestibulum. Blandit adipiscing eu felis iaculis volutpat ac adipiscing accumsan eu faucibus. Integer ac pellentesque praesent. Donec accumsan interdum nisi, quis tincidunt felis sagittis eget. tempus euismod. Vestibulum ante ipsum primis in faucibus vestibulum. Blandit adipiscing eu felis iaculis volutpat ac adipiscing accumsan eu faucibus. Integer ac pellentesque praesent tincidunt felis sagittis eget. tempus euismod. Vestibulum ante ipsum primis in faucibus vestibulum. Blandit adipiscing eu felis iaculis volutpat ac adipiscing accumsan eu faucibus. Integer ac pellentesque praesent. Blandit adipiscing eu felis iaculis volutpat ac adipiscing accumsan eu faucibus. Integer ac pellentesque praesent tincidunt felis sagittis eget. tempus euismod. Vestibulum ante ipsum primis in faucibus vestibulum. Blandit adipiscing eu felis iaculis volutpat ac adipiscing accumsan eu faucibus. Integer ac pellentesque praesent.</p>
+					</section>
+
+				</div>
+			</section>
+		-->
+
+		<!-- Footer -->
+			<section id="footer">
+				<!-- <ul class="icons">
+					<li><a href="#" class="icon brands alt fa-twitter"><span class="label">Twitter</span></a></li>
+					<li><a href="#" class="icon brands alt fa-facebook-f"><span class="label">Facebook</span></a></li>
+					<li><a href="#" class="icon brands alt fa-instagram"><span class="label">Instagram</span></a></li>
+					<li><a href="#" class="icon brands alt fa-github"><span class="label">GitHub</span></a></li>
+					<li><a href="#" class="icon solid alt fa-envelope"><span class="label">Email</span></a></li>
+				</ul> -->
+				<ul class="copyright">
+					<li>&copy; 2024</li><li>Design: <a href="http://html5up.net">HTML5 UP</a></li>
+				</ul>
+			</section>
+
+		<!-- Scripts -->
+			<script src="assets/js/jquery.min.js"></script>
+			<script src="assets/js/jquery.scrolly.min.js"></script>
+			<script src="assets/js/browser.min.js"></script>
+			<script src="assets/js/breakpoints.min.js"></script>
+			<script src="assets/js/util.js"></script>
+			<script src="assets/js/main.js"></script>
+
+	</body>
+</html>
+
+
+
+		<!-- Two -->
+		<!-- <section id="two" class="main style2">
+			<div class="container">
+				<div class="row gtr-150">
+					<div class="col-6 col-12-medium">
+						<ul class="major-icons">
+							<li><span class="icon solid style1 major fa-code"></span></li>
+							<li><span class="icon solid style2 major fa-bolt"></span></li>
+							<li><span class="icon solid style3 major fa-camera-retro"></span></li>
+							<li><span class="icon solid style4 major fa-cog"></span></li>
+							<li><span class="icon solid style5 major fa-desktop"></span></li>
+							<li><span class="icon solid style6 major fa-calendar"></span></li>
+						</ul>
+					</div>
+					<div class="col-6 col-12-medium">
+						<header class="major">
+							<h2>Lorem ipsum dolor adipiscing<br />
+							amet dolor consequat</h2>
+						</header>
+						<p>Adipiscing a commodo ante nunc accumsan interdum mi ante adipiscing. A nunc lobortis non nisl amet vis volutpat aclacus nascetur ac non. Lorem curae eu ante amet sapien in tempus ac. Adipiscing id accumsan adipiscing ipsum.</p>
+						<p>Blandit faucibus proin. Ac aliquam integer adipiscing enim non praesent vis commodo nunc phasellus cubilia ac risus accumsan. Accumsan blandit. Lobortis phasellus non lobortis dit varius mi varius accumsan lobortis. Blandit ante aliquam lacinia lorem lobortis semper morbi col faucibus vitae integer placerat accumsan orci eu mi odio tempus adipiscing adipiscing adipiscing curae consequat feugiat etiam dolore.</p>
+						<p>Adipiscing a commodo ante nunc accumsan interdum mi ante adipiscing. A nunc lobortis non nisl amet vis volutpat aclacus nascetur ac non. Lorem curae eu ante amet sapien in tempus ac. Adipiscing id accumsan adipiscing ipsum.</p>
+					</div>
+				</div>
+			</div>
+		</section> -->
+
+		
+
+		<!-- Four -->
+		<!-- <section id="four" class="main style2 special">
+			<div class="container">
+				<header class="major">
+					<h2>Ipsum feugiat consequat?</h2>
+				</header>
+				<p>Sed lacus nascetur ac ante amet sapien.</p>
+				<ul class="actions special">
+					<li><a href="#" class="button wide primary">Sign Up</a></li>
+					<li><a href="#" class="button wide">Learn More</a></li>
+				</ul>
+			</div>
+		</section> -->
