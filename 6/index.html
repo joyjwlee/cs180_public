@@ -73,7 +73,7 @@
 					<div class="row gtr-150">
 						<div class="col-8 col-12-medium">
 							<span class="image fit"><img src="images/chess.gif" alt="" /></span>
-							<h5>Chess set refocusing GIF, <code>C = 0</code> to <code>C = 25</code></h5>
+							<h5>Chess set refocusing GIF, <code>C = 0</code> to <code>C = 3</code></h5>
 						</div>
 						<div class="col-4 col-12-medium">
 							<span class="image fit"><img src="images/amethyst.gif" alt="" /></span>
@@ -86,15 +86,14 @@
 							<span class="image fit"><img id="depth-image" src="images/depth_refocus_chess_00.png" alt="Depth Refocus"><span>
 							<script>
 								const imgElement = document.getElementById('depth-image');
-								const totalFrames = 25; // Number of images (depth_refocus_chess_00.png to depth_refocus_chess_25.png)
+								const totalFrames = 25;
 								document.body.addEventListener('mousemove', (event) => {
-									const cursorY = event.clientY; // Cursor Y position within the viewport
-									const viewportHeight = window.innerHeight; // Total height of the viewport
+									const cursorY = event.clientY;
+									const viewportHeight = window.innerHeight;
 									const frameIndex = Math.min(
 										totalFrames - 1,
 										Math.floor((cursorY / viewportHeight) * totalFrames * 1.5)
 									);
-									// Update image source dynamically
 									imgElement.src = `images/depth_refocus_chess_${String(frameIndex).padStart(2, '0')}.png`;
 								});
 							</script>
