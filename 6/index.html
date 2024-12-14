@@ -297,6 +297,168 @@
 					</div>
 				</section>
 
+			<!-- Seven -->
+			<hr/>
+				<section id="Seven" class="main style1 special">
+					<div class="container">
+						<header class="major">
+							<h2>Bells & Whistles 2: NeRF</h2>
+							<p>neural radiance fields</p>
+						</header>
+						<p>For my second B&W, I have implemented the first part of the NeRF project. We utilized Sinusoidal Positional Encoding (PE) and fit a Multilayer Perceptron (MLP) to learn the RGB values of a 2D image given the <code>(x, y)</code> coordinates. To train the MLP, I also implemented a custom <code>Dataset</code> class for random pixel batch sampling. Down below is the architecture of our MLP:</p>
+						<div class="row gtr-150">
+							<div class="col-3 col-12-medium">
+							</div>
+							<div class="col-6 col-12-medium">
+								<span class="image fit"><img src="images/mlp_img.jpg" alt="" /></span>
+								<p>MLP architecture</p>
+							</div>
+							<div class="col-3 col-12-medium">
+							</div>
+						</div>
+						<p>For the first basic model, I used MSE loss for training, peak signal-to-noise ratio (PSNR) for validation, an Adam optimizer with a learning rate of <code>1e-2</code>, batch size of 10k, and number of iterations of 3k. Down below are the results across epochs 1, 5, 10, 25, and 42, and the MSE/PSNR graphs.</p>
+						<div class="row gtr-150">
+							<div class="col-13 col-12-medium">
+								<span class="image fit"><img src="images/1_epoch_1.png" alt="" /></span>
+								<p>MLP Epoch 1</p>
+							</div>
+							<div class="col-13 col-12-medium">
+								<span class="image fit"><img src="images/1_epoch_5.png" alt="" /></span>
+								<p>MLP Epoch 5</p>
+							</div>
+							<div class="col-13 col-12-medium">
+								<span class="image fit"><img src="images/1_epoch_10.png" alt="" /></span>
+								<p>MLP Epoch 10</p>
+							</div>
+							<div class="col-13 col-12-medium">
+								<span class="image fit"><img src="images/1_epoch_25.png" alt="" /></span>
+								<p>MLP Epoch 25</p>
+							</div>
+							<div class="col-13 col-12-medium">
+								<span class="image fit"><img src="images/1_epoch_42.png" alt="" /></span>
+								<p>MLP Epoch 42</p>
+							</div>
+							<div class="col-4 col-12-medium">
+								<span class="image fit"><img src="images/1_mse_linear.png" alt="" /></span>
+								<p>MSE Loss (linear)</p>
+							</div>
+							<div class="col-4 col-12-medium">
+								<span class="image fit"><img src="images/1_mse_log.png" alt="" /></span>
+								<p>MSE Loss (log)</p>
+							</div>
+							<div class="col-4 col-12-medium">
+								<span class="image fit"><img src="images/1_psnr.png" alt="" /></span>
+								<p>PSNR</p>
+							</div>
+						</div>
+						<p>We've verified that our code to train the MLP works! Now, we train two more MLPs for hyperparameter tuning. For the first variation, I changed the learning rate to be <code>lr=1e-3</code>, and for the second variation, I changed the number of hidden dimensions to be <code>hidden_dim=128</code>. The results and graphs for both are shown down below:</p>
+						<div class="row gtr-150">
+							<div class="col-13 col-12-medium">
+								<span class="image fit"><img src="images/2_epoch_1.png" alt="" /></span>
+								<p><code>lr=1e-3</code> MLP Epoch 1</p>
+							</div>
+							<div class="col-13 col-12-medium">
+								<span class="image fit"><img src="images/2_epoch_5.png" alt="" /></span>
+								<p><code>lr=1e-3</code> MLP Epoch 5</p>
+							</div>
+							<div class="col-13 col-12-medium">
+								<span class="image fit"><img src="images/2_epoch_10.png" alt="" /></span>
+								<p><code>lr=1e-3</code> MLP Epoch 10</p>
+							</div>
+							<div class="col-13 col-12-medium">
+								<span class="image fit"><img src="images/2_epoch_25.png" alt="" /></span>
+								<p><code>lr=1e-3</code> MLP Epoch 25</p>
+							</div>
+							<div class="col-13 col-12-medium">
+								<span class="image fit"><img src="images/2_epoch_42.png" alt="" /></span>
+								<p><code>lr=1e-3</code> MLP Epoch 42</p>
+							</div>
+							<div class="col-4 col-12-medium">
+								<span class="image fit"><img src="images/2_mse_linear.png" alt="" /></span>
+								<p> <code>lr=1e-3</code>MSE Loss (linear)</p>
+							</div>
+							<div class="col-4 col-12-medium">
+								<span class="image fit"><img src="images/2_mse_log.png" alt="" /></span>
+								<p> <code>lr=1e-3</code>MSE Loss (log)</p>
+							</div>
+							<div class="col-4 col-12-medium">
+								<span class="image fit"><img src="images/2_psnr.png" alt="" /></span>
+								<p><code>lr=1e-3</code> PSNR</p>
+							</div>
+						</div>
+						<div class="row gtr-150">
+							<div class="col-13 col-12-medium">
+								<span class="image fit"><img src="images/3_epoch_1.png" alt="" /></span>
+								<p><code>D=128</code> MLP Epoch 1</p>
+							</div>
+							<div class="col-13 col-12-medium">
+								<span class="image fit"><img src="images/3_epoch_5.png" alt="" /></span>
+								<p><code>D=128</code> MLP Epoch 5</p>
+							</div>
+							<div class="col-13 col-12-medium">
+								<span class="image fit"><img src="images/3_epoch_10.png" alt="" /></span>
+								<p><code>D=128</code> MLP Epoch 10</p>
+							</div>
+							<div class="col-13 col-12-medium">
+								<span class="image fit"><img src="images/3_epoch_25.png" alt="" /></span>
+								<p><code>D=128</code> MLP Epoch 25</p>
+							</div>
+							<div class="col-13 col-12-medium">
+								<span class="image fit"><img src="images/3_epoch_42.png" alt="" /></span>
+								<p><code>D=128</code> MLP Epoch 42</p>
+							</div>
+							<div class="col-4 col-12-medium">
+								<span class="image fit"><img src="images/3_mse_linear.png" alt="" /></span>
+								<p><code>D=128</code> MSE Loss (linear)</p>
+							</div>
+							<div class="col-4 col-12-medium">
+								<span class="image fit"><img src="images/3_mse_log.png" alt="" /></span>
+								<p><code>D=128</code> MSE Loss (log)</p>
+							</div>
+							<div class="col-4 col-12-medium">
+								<span class="image fit"><img src="images/3_psnr.png" alt="" /></span>
+								<p><code>D=128</code> PSNR</p>
+							</div>
+						</div>
+						<p>With the first hyperparameter tuning, we can see from the linear MSE loss curve that the smaller convergence rate causes the loss to decrease a bit slower. As for the second model, although we halved the number of hidden dimensions, the PSNR ended up being around the same -- not too bad, considering the loss curve seemed to flatten/converge faster. Finally, we run the MLP training on an image of my choosing:</p>
+						<div class="row gtr-150">
+							<div class="col-13 col-12-medium">
+								<span class="image fit"><img src="images/4_epoch_1.png" alt="" /></span>
+								<p>MLP Epoch 1</p>
+							</div>
+							<div class="col-13 col-12-medium">
+								<span class="image fit"><img src="images/4_epoch_10.png" alt="" /></span>
+								<p>MLP Epoch 10</p>
+							</div>
+							<div class="col-13 col-12-medium">
+								<span class="image fit"><img src="images/4_epoch_20.png" alt="" /></span>
+								<p>MLP Epoch 20</p>
+							</div>
+							<div class="col-13 col-12-medium">
+								<span class="image fit"><img src="images/4_epoch_50.png" alt="" /></span>
+								<p>MLP Epoch 50</p>
+							</div>
+							<div class="col-13 col-12-medium">
+								<span class="image fit"><img src="images/4_epoch_83.png" alt="" /></span>
+								<p>MLP Epoch 83</p>
+							</div>
+							<div class="col-4 col-12-medium">
+								<span class="image fit"><img src="images/4_mse_linear.png" alt="" /></span>
+								<p>MSE Loss (linear)</p>
+							</div>
+							<div class="col-4 col-12-medium">
+								<span class="image fit"><img src="images/4_mse_log.png" alt="" /></span>
+								<p>MSE Loss (log)</p>
+							</div>
+							<div class="col-4 col-12-medium">
+								<span class="image fit"><img src="images/4_psnr.png" alt="" /></span>
+								<p>PSNR</p>
+							</div>
+						</div>
+						<p>Overall, we can see that our code works nicely for training the MLP to reconstruct the original images they were trained on! I'm pretty happy with how the code turned out, and it was nice getting to work with neural networks one last time for this class.</p>
+					</div>
+				</section>
+
 	<!-- TBD -->
 	<hr/>
 		<section id="TBD" class="main style1 special">
@@ -304,6 +466,7 @@
 				<header class="major">
 					<h2>Acknowledgements</h2>
 				</header>
+				<p>With that, this concludes my journey in computer vision for this semester. It has been an amazing experience, and I am grateful to have learned so much about computer vision. :D</p>
 				<p>This project is part of the Fall 2024 offering of CS180: Intro to Computer Vision and Computational Photography, at UC Berkeley. This website template is modified from HTML5 UP.</p>
 			</div>
 		</section>
