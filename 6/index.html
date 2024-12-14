@@ -137,6 +137,166 @@
 				</div>
 			</section>
 
+			<!-- Five -->
+			<hr/>
+				<section id="Five" class="main style1 special">
+					<div class="container">
+						<header class="major">
+							<h2>Gradient Domain Fusion: Toy Problem</h2>
+							<p>prelude to Poisson blending</p>
+						</header>
+						<p>Previously in <a href="../2/index.html">Project 2</a>, we explored blending images using Gaussian and Laplacian stacks. Although this method worked wonderfully, we still had to come up with precise masks that perfectly defined what part of the source image was masked before blending it into the target image. To remedy this, we implement Poisson blending in this project. Using starter code from <a href="https://courses.grainger.illinois.edu/cs445/fa2023/projects/gradient/ComputationalPhotography_ProjectGradient.html">UIUC's CS 445</a>, we first implement a toy problem and then Poisson blending.</p>
+						<p>For this toy problem, we compute the <code>x</code> and <code>y</code> gradients from an image <code>s</code>, then use all the gradients, plus one pixel intensity, to reconstruct an image <code>v</code>. Namely, we have the following objectives: (1) minimize <code>(v(x+1,y)-v(x,y) - (s(x+1,y)-s(x,y)))^2</code>, (2) minimize <code>(v(x,y+1)-v(x,y) - (s(x,y+1)-s(x,y)))^2</code>, and (3) minimize <code>(v(0,0)-s(0,0))^2</code>. By constructing these three objectives as a least squares problem in the form of <code>Av=b</code>, I was able to recover the original image with <code>MSE = 8.80e-6</code>as follows:</p>
+						<div class="row gtr-150">
+							<div class="col-6 col-12-medium">
+								<span class="image fit"><img src="images/toy_problem.png" alt="" /></span>
+								<p>Original Image</p>
+							</div>
+							<div class="col-6 col-12-medium">
+								<span class="image fit"><img src="images/toy_reconstructed.png" alt="" /></span>
+								<p>Reconstructed Image</p>
+							</div>
+						</div>
+					</div>
+				</section>
+
+			<!-- Six -->
+			<hr/>
+				<section id="Six" class="main style1 special">
+					<div class="container">
+						<header class="major">
+							<h2>Gradient Domain Fusion: Poisson Blending</h2>
+							<p>using gradients for fusion</p>
+						</header>
+						<p>Now, we finally implement Poisson blending. Poisson blending attempts to solve the blending constraints, which can be formulated as follows:</p>
+						<div class="row gtr-150">
+							<div class="col-2 col-12-medium">
+							</div>
+							<div class="col-8 col-12-medium">
+								<span class="image fit"><img src="images/poissonblend_eq.png" alt="" /></span>
+							</div>
+							<div class="col-2 col-12-medium">
+							</div>
+						</div>
+						<p>In this equation, we have our source image <code>s</code>, target image <code>t</code>, source region <code>S</code> (the area contained in the mask), and the value we are computing <code>v</code>. In the summation, <code>i</code> is each pixel in <code>S</code>, and <code>j</code> are the 4 neighbors of <code>i</code> in the cardinal directions. Similar to the toy problem in the previous part, the basic idea is the same: setting up an equation in the form of <code>Av=b</code>, where <code>A</code> is a sparse matrix, and solve for <code>v</code> using least squares. I populated the values in matrix <code>A</code> and vector <code>b</code> by doing the following: (1) Initialize <code>A</code> as a <code>(h * w, h * w)</code> matrix and <code>b</code> as a length <code>h * w</code> vector; (2) Loop through each <code>(x, y)</code> in <code>s</code>; (3) If the pixel falls in the mask, loop through the 4 neighbors at <code>(x_n, y_n)</code>; (4) If the pixel falls outside the mask, set the boundary to match the background image values.</p>
+						<p>Once we have successfully set up our sparse matrix <code>A</code> and vector <code>b</code>, we can once again use least squares to compute <code>v</code> and reshape it to our final image. This approach only works on <code>2D</code> images, so each process was repeated 3 times -- once for each of the 3 color channels. I have 4 results of my Poisson blending down below:</p>
+						<div class="row gtr-150">
+							<div class="col-13 col-12-medium">
+							</div>
+							<div class="col-13 col-12-medium">
+								<span class="image fit"><img src="images/penguin.png" alt="" /></span>
+								<p>Penguin</p>
+							</div>
+							<div class="col-13 col-12-medium">
+								<span class="image fit"><img src="images/penguin_mask.png" alt="" /></span>
+								<p>Penguin Mask</p>
+							</div>
+							<div class="col-4 col-12-medium">
+								<span class="image fit"><img src="images/snow_hikers.png" alt="" /></span>
+								<p>Snow Hikers</p>
+							</div>
+							<div class="col-4 col-12-medium">
+								<span class="image fit"><img src="images/img1_naive.png" alt="" /></span>
+								<p>Naive Blend</p>
+							</div>
+							<div class="col-4 col-12-medium">
+								<span class="image fit"><img src="images/img1_poisson_orig.png" alt="" /></span>
+								<p>Poisson Blend 1 (worse)</p>
+							</div>
+							<div class="col-4 col-12-medium">
+								<span class="image fit"><img src="images/img1_poisson.png" alt="" /></span>
+								<p>Poisson Blend 2 (better)</p>
+							</div>
+						</div>
+						<p>Only for this first set of blending, I got the picture of the penguin and penguin mask from <a href="https://inst.eecs.berkeley.edu/~cs194-26/fa22/upload/files/projFinalAssigned/cs194-26-adg/">Bryce Wong's website</a>. All of the masks down below are created by me using MS Paint. Otherwise, we can see that the naive blend simply pastes in the source image into the target image where it is contained in the mask. The first Poisson blend I have is much better, but the border is still obvious. Finally, we can see that my second Poisson blend works beautifully well. The only difference between the two Poisson blends is that I have scaled down the images down by 50% for the second blend; otherwise, my blending logic was the same for both images.</p>
+						<div class="row gtr-150">
+							<div class="col-13 col-12-medium">
+							</div>
+							<div class="col-13 col-12-medium">
+								<span class="image fit"><img src="images/ironman.png" alt="" /></span>
+								<p>Iron Man</p>
+							</div>
+							<div class="col-13 col-12-medium">
+								<span class="image fit"><img src="images/ironman_mask_2.png" alt="" /></span>
+								<p>Iron Man Mask</p>
+							</div>
+							<div class="col-4 col-12-medium">
+								<span class="image fit"><img src="images/golden_gate.png" alt="" /></span>
+								<p>Golden Gate Bridge</p>
+							</div>
+							<div class="col-6 col-12-medium">
+								<span class="image fit"><img src="images/img2_naive.png" alt="" /></span>
+								<p>Naive Blend</p>
+							</div>
+							<div class="col-6 col-12-medium">
+								<span class="image fit"><img src="images/img2_poisson.png" alt="" /></span>
+								<p>Poisson Blend</p>
+							</div>
+						</div>
+						<p>Blending Iron Man to fly over the Golden Gate bridge was by far my best result. It was pretty cool to see how cleanly the sky from the original image -- visible from the naive blend -- blends into the sky from the target image.</p>
+						<div class="row gtr-150">
+							<div class="col-13 col-12-medium">
+							</div>
+							<div class="col-13 col-12-medium">
+								<span class="image fit"><img src="images/couch.png" alt="" /></span>
+								<p>Couch</p>
+							</div>
+							<div class="col-13 col-12-medium">
+								<span class="image fit"><img src="images/couch_mask_2.png" alt="" /></span>
+								<p>Couch Mask</p>
+							</div>
+							<div class="col-4 col-12-medium">
+								<span class="image fit"><img src="images/dwinelle_145.png" alt="" /></span>
+								<p>Dwinelle 145</p>
+							</div>
+							<div class="col-6 col-12-medium">
+								<span class="image fit"><img src="images/img3_naive.png" alt="" /></span>
+								<p>Naive Blend</p>
+							</div>
+							<div class="col-6 col-12-medium">
+								<span class="image fit"><img src="images/img3_poisson.png" alt="" /></span>
+								<p>Poisson Blend</p>
+							</div>
+						</div>
+						<p>While the Poisson blend for the couch onto the Dwinelle 145 stage isn't perfect, we can still see that it is much better than the naive blend. I have two reasons as to why I think the Poisson blend doesn't look as nice it could have. The first is that right above the couch is an empty projector screen, which causes a lot of the blank white pixel intensities to "bleed" into our source image. Another is that the background of the couch image was very high frequency whereas Dwinelle stage is very low frequency. This causes artifacts to show up in the blending boundary since Poisson blending utilizes the gradient of the source image. Next for Mona Lisa and Timothee Chalamet, I will show two different attempts:</p>
+						<div class="row gtr-150">
+							<div class="col-3 col-12-medium">
+								<span class="image fit"><img src="images/chalamet.png" alt="" /></span>
+								<p>Chalamet</p>
+							</div>
+							<div class="col-3 col-12-medium">
+								<span class="image fit"><img src="images/chalamet_mask_1.png" alt="" /></span>
+								<p>Chalamet Mask 1</p>
+							</div>
+							<div class="col-3 col-12-medium">
+								<span class="image fit"><img src="images/chalamet_mask_1.png" alt="" /></span>
+								<p>Chalamet Mask 2</p>
+							</div>
+							<div class="col-3 col-12-medium">
+								<span class="image fit"><img src="images/mona_lisa.png" alt="" /></span>
+								<p>Mona Lisa</p>
+							</div>
+							<div class="col-3 col-12-medium">
+								<span class="image fit"><img src="images/img4_naive.png" alt="" /></span>
+								<p>Naive Blend 1</p>
+							</div>
+							<div class="col-3 col-12-medium">
+								<span class="image fit"><img src="images/img4_poisson.png" alt="" /></span>
+								<p>Poisson Blend 1</p>
+							</div>
+							<div class="col-3 col-12-medium">
+								<span class="image fit"><img src="images/img4_naive_2.png" alt="" /></span>
+								<p>Naive Blend 2</p>
+							</div>
+							<div class="col-3 col-12-medium">
+								<span class="image fit"><img src="images/img4_poisson_2.png" alt="" /></span>
+								<p>Poisson Blend 2</p>
+							</div>
+						</div>
+						<p>Between my two attempts, the only difference is how much of Chalamet's face I decided to keep before blending in, as evidenced by the naive blends. In the first attempt, the face itself looks more naturally blended in, but we can still see a slight outline. To fix this, I modified the mask to include less of Chalamet's face for blending. We can see that while this did indeed solve the problem of a noticeable border, the darker eye on the right hand side is a lot more noticeable. I believe that this is due to the shadows in Mona Lisa's eyes on the right hand side. It was pretty cool to see how minor changes in the mask seemingly changes the output images somewhat drastically.</p>
+					</div>
+				</section>
+
 	<!-- TBD -->
 	<hr/>
 		<section id="TBD" class="main style1 special">
